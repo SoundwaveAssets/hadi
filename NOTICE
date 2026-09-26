@@ -1,0 +1,42 @@
+Hadi — Passerelle de décision CI/CD semi-automatisée
+Copyright 2026 Hadi Contributors
+
+Ce produit inclut des logiciels développés par des tiers.
+Les licences de ces dépendances sont listées ci-dessous.
+
+--------------------------------------------------------------------------------
+FastAPI — MIT License — https://github.com/fastapi/fastapi
+Starlette — BSD 3-Clause — https://github.com/encode/starlette
+Uvicorn — BSD 3-Clause — https://github.com/encode/uvicorn
+SQLModel — MIT License — https://github.com/fastapi/sqlmodel
+SQLAlchemy — MIT License — https://github.com/sqlalchemy/sqlalchemy
+Alembic — MIT License — https://github.com/sqlalchemy/alembic
+Pydantic — MIT License — https://github.com/pydantic/pydantic
+pydantic-settings — MIT License — https://github.com/pydantic/pydantic-settings
+PyJWT — MIT License — https://github.com/jpadilla/pyjwt
+bcrypt — Apache 2.0 — https://github.com/pyca/bcrypt
+cryptography — Apache 2.0 / BSD — https://github.com/pyca/cryptography
+httpx — BSD 3-Clause — https://github.com/encode/httpx
+tenacity — Apache 2.0 — https://github.com/jd/tenacity
+procrastinate — MIT License — https://github.com/procrastinate-org/procrastinate
+psycopg2-binary — LGPL — https://github.com/psycopg/psycopg2
+slowapi — MIT License — https://github.com/laurentS/slowapi
+truststore — MIT License — https://github.com/sethmlarson/truststore
+scikit-learn — BSD 3-Clause — https://github.com/scikit-learn/scikit-learn
+numpy — BSD 3-Clause — https://github.com/numpy/numpy
+PyGithub — LGPL — https://github.com/PyGithub/PyGithub
+python-gitlab — LGPL — https://github.com/python-gitlab/python-gitlab
+reportlab — BSD — https://www.reportlab.com
+pillow — HPND — https://github.com/python-pillow/Pillow
+python-json-logger — BSD 2-Clause — https://github.com/madzak/python-json-logger
+email-validator — CC0 — https://github.com/JoshData/python-email-validator
+watchfiles — MIT License — https://github.com/samuelcolvin/watchfiles
+
+Next.js — MIT License — https://github.com/vercel/next.js
+React — MIT License — https://github.com/facebook/react
+Tailwind CSS — MIT License — https://github.com/tailwindlabs/tailwindcss
+
+PostgreSQL — PostgreSQL License — https://www.postgresql.org
+
+Les textes complets des licences sont disponibles dans les répertoires
+respectifs de chaque dépendance ou sur https://spdx.org/licenses/.

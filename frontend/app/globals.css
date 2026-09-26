@@ -1,0 +1,291 @@
+@import "tailwindcss";
+
+/*
+ * ============================================================================
+ *  Charte « Jenkins moderne »
+ * ============================================================================
+ *
+ * Registre utilitaire : lisibilité des données avant tout, états visibles d'un
+ * coup d'œil, chrome sombre pour cadrer une page claire. Les codes CI/CD
+ * classiques sont repris tels quels — bleu d'action, vert succès, rouge échec,
+ * jaune instable, gris attente — parce qu'un développeur les lit sans légende.
+ *
+ * Polices système uniquement. Deux raisons : un outil de développement n'a
+ * pas besoin d'une identité typographique, et surtout le projet promet de
+ * tourner partout — un build qui télécharge des polices depuis Google échoue
+ * sur un réseau restreint. `ui-monospace` porte toute la donnée technique
+ * (hashes, durées, journaux), comme sur n'importe quelle console.
+ *
+ * Les noms de tokens existants sont conservés : les 18 pages qui les
+ * consomment adoptent la nouvelle charte sans modification. Seules les
+ * valeurs changent, et de nouveaux tokens d'état CI s'y ajoutent.
+ */
+
+:root {
+  /* --- Surfaces ----------------------------------------------------------- */
+  --color-page: #eef1f4;
+  --color-surface: #ffffff;
+  --color-surface-2: #f5f7f9;
+
+  /* Chrome : barre supérieure et fond du menu latéral, sombres comme sur
+     Jenkins — ils cadrent la page sans concurrencer son contenu. */
+  --color-chrome: #2b3a42;
+  --color-chrome-2: #344751;
+  --color-chrome-ink: #e4eaee;
+  --color-chrome-ink-2: #9fb0ba;
+  --color-chrome-line: #3f545f;
+
+  /* --- Encre --------------------------------------------------------------- */
+  --color-ink: #1b2429;
+  --color-ink-2: #4b5960;
+  --color-ink-3: #7a878e;
+
+  --color-line: #d9dee2;
+  --color-line-2: #bcc5cb;
+
+  /* --- Action ---------------------------------------------------------------
+     Bleu Jenkins. 5.0:1 sur blanc : utilisable en texte et en lien. */
+  --color-accent: #0b6aa2;
+  --color-accent-hover: #095787;
+  --color-accent-soft: #e6f0f7;
+
+  /* --- États CI/CD -----------------------------------------------------------
+     Vocabulaire de n'importe quel serveur d'intégration. Chaque état a une
+     teinte pleine (icône, barre) et une teinte douce (fond de badge, ligne
+     surlignée). La couleur ne porte jamais le sens seule : toujours doublée
+     d'une icône ou d'un libellé (voir components/devtools/StatusIcon.tsx). */
+  --color-success: #1e9e4a;
+  --color-success-soft: #e3f4e9;
+  --color-failure: #d33833;
+  --color-failure-soft: #fbe7e6;
+  --color-unstable: #d9930d;
+  --color-unstable-soft: #fdf1d8;
+  --color-running: #0b6aa2;
+  --color-running-soft: #e6f0f7;
+  --color-aborted: #8d9499;
+  --color-aborted-soft: #eef0f2;
+
+  /* Alias vers les noms historiques encore utilisés dans les pages. */
+  --color-good: var(--color-success);
+  --color-good-soft: var(--color-success-soft);
+  --color-warning: var(--color-unstable);
+  --color-warning-soft: var(--color-unstable-soft);
+  --color-serious: #c2621d;
+  --color-serious-soft: #fbeadf;
+  --color-critical: var(--color-failure);
+  --color-critical-soft: var(--color-failure-soft);
+
+  /* Remplissages pleins (fond uni + texte blanc) : identiques dans les deux
+     thèmes, réservés aux boutons et badges pleins. */
+  --color-accent-solid: #0b6aa2;
+  --color-accent-solid-hover: #095787;
+  --color-critical-solid: #d33833;
+
+  /* --- Console ----------------------------------------------------------------
+     Toujours sombre, quel que soit le thème : un journal de build se lit sur
+     fond noir partout, et l'œil d'un développeur y est déjà réglé. */
+  --color-console: #0f1417;
+  --color-console-ink: #d7dde2;
+  --color-console-dim: #6b7880;
+  --color-console-gutter: #171e23;
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --color-page: #14191c;
+    --color-surface: #1c2327;
+    --color-surface-2: #242c31;
+
+    --color-chrome: #0f1417;
+    --color-chrome-2: #171e23;
+    --color-chrome-ink: #e4eaee;
+    --color-chrome-ink-2: #8f9da6;
+    --color-chrome-line: #26313a;
+
+    --color-ink: #e6eaed;
+    --color-ink-2: #a9b4bb;
+    --color-ink-3: #7b8790;
+
+    --color-line: #2e383e;
+    --color-line-2: #3f4b52;
+
+    --color-accent: #4ea3e0;
+    --color-accent-hover: #76b9ea;
+    --color-accent-soft: #15293a;
+
+    --color-success: #43c26d;
+    --color-success-soft: #14301e;
+    --color-failure: #ef6b66;
+    --color-failure-soft: #3a1917;
+    --color-unstable: #f2c04e;
+    --color-unstable-soft: #3a2c0f;
+    --color-running: #4ea3e0;
+    --color-running-soft: #15293a;
+    --color-aborted: #8d9499;
+    --color-aborted-soft: #262d31;
+
+    --color-serious: #e8925a;
+    --color-serious-soft: #3a2415;
+
+    --color-console: #0a0e10;
+    --color-console-ink: #d7dde2;
+    --color-console-dim: #5f6c74;
+    --color-console-gutter: #10161a;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-page: #14191c;
+  --color-surface: #1c2327;
+  --color-surface-2: #242c31;
+
+  --color-chrome: #0f1417;
+  --color-chrome-2: #171e23;
+  --color-chrome-ink: #e4eaee;
+  --color-chrome-ink-2: #8f9da6;
+  --color-chrome-line: #26313a;
+
+  --color-ink: #e6eaed;
+  --color-ink-2: #a9b4bb;
+  --color-ink-3: #7b8790;
+
+  --color-line: #2e383e;
+  --color-line-2: #3f4b52;
+
+  --color-accent: #4ea3e0;
+  --color-accent-hover: #76b9ea;
+  --color-accent-soft: #15293a;
+
+  --color-success: #43c26d;
+  --color-success-soft: #14301e;
+  --color-failure: #ef6b66;
+  --color-failure-soft: #3a1917;
+  --color-unstable: #f2c04e;
+  --color-unstable-soft: #3a2c0f;
+  --color-running: #4ea3e0;
+  --color-running-soft: #15293a;
+  --color-aborted: #8d9499;
+  --color-aborted-soft: #262d31;
+
+  --color-serious: #e8925a;
+  --color-serious-soft: #3a2415;
+
+  --color-console: #0a0e10;
+  --color-console-ink: #d7dde2;
+  --color-console-dim: #5f6c74;
+  --color-console-gutter: #10161a;
+}
+
+@theme inline {
+  --color-page: var(--color-page);
+  --color-surface: var(--color-surface);
+  --color-surface-2: var(--color-surface-2);
+  --color-chrome: var(--color-chrome);
+  --color-chrome-2: var(--color-chrome-2);
+  --color-chrome-ink: var(--color-chrome-ink);
+  --color-chrome-ink-2: var(--color-chrome-ink-2);
+  --color-chrome-line: var(--color-chrome-line);
+  --color-ink: var(--color-ink);
+  --color-ink-2: var(--color-ink-2);
+  --color-ink-3: var(--color-ink-3);
+  --color-line: var(--color-line);
+  --color-line-2: var(--color-line-2);
+  --color-accent: var(--color-accent);
+  --color-accent-hover: var(--color-accent-hover);
+  --color-accent-soft: var(--color-accent-soft);
+  --color-success: var(--color-success);
+  --color-success-soft: var(--color-success-soft);
+  --color-failure: var(--color-failure);
+  --color-failure-soft: var(--color-failure-soft);
+  --color-unstable: var(--color-unstable);
+  --color-unstable-soft: var(--color-unstable-soft);
+  --color-running: var(--color-running);
+  --color-running-soft: var(--color-running-soft);
+  --color-aborted: var(--color-aborted);
+  --color-aborted-soft: var(--color-aborted-soft);
+  --color-good: var(--color-good);
+  --color-good-soft: var(--color-good-soft);
+  --color-warning: var(--color-warning);
+  --color-warning-soft: var(--color-warning-soft);
+  --color-serious: var(--color-serious);
+  --color-serious-soft: var(--color-serious-soft);
+  --color-critical: var(--color-critical);
+  --color-critical-soft: var(--color-critical-soft);
+  --color-accent-solid: var(--color-accent-solid);
+  --color-accent-solid-hover: var(--color-accent-solid-hover);
+  --color-critical-solid: var(--color-critical-solid);
+  --color-console: var(--color-console);
+  --color-console-ink: var(--color-console-ink);
+  --color-console-dim: var(--color-console-dim);
+  --color-console-gutter: var(--color-console-gutter);
+
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "JetBrains Mono", "Fira Code", Menlo, Consolas, monospace;
+  /* Plus de registre serif : un outil de développement n'en a pas l'usage. */
+  --font-serif: var(--font-sans);
+}
+
+body {
+  background: var(--color-page);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Données alignées en colonne (tableaux, durées, compteurs). */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Scrollbars fines, cohérentes avec un outil dense. */
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-line-2);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-ink-3);
+}
+
+/* Focus clavier visible partout, sans halo à la souris. */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Pulsation de l'état « en cours » : lente, discrète, arrêtée si l'utilisateur
+   a demandé moins d'animations. */
+@keyframes status-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+.status-running {
+  animation: status-pulse 1.6s ease-in-out infinite;
+}
+
+/* Bande indéterminée d'une étape en cours (PipelineView). */
+@keyframes indeterminate {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status-running,
+  .animate-\[indeterminate_1\.2s_ease-in-out_infinite\] {
+    animation: none;
+  }
+}

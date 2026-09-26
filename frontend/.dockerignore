@@ -1,0 +1,8 @@
+# Contexte de build de l'interface (celui de la racine ne s'applique pas ici).
+node_modules
+.next
+out
+.env*
+*.tsbuildinfo
+npm-debug.log*
+AGENTS.md

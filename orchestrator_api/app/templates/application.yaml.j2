@@ -1,0 +1,113 @@
+# Manifeste Kubernetes, pipeline « {{ name }} »
+#
+# Généré par l'Orchestrateur CI/CD. Ce fichier est valide tel quel : il
+# s'applique sans modification, puis s'ajuste à votre application.
+#
+# À ADAPTER avant un usage réel :
+#   1. `image`        , le registre qui héberge vos images.
+#   2. `containerPort`, le port réel sur lequel votre application écoute
+#                        (et `targetPort` du Service, identique).
+#   3. `readinessProbe` / `livenessProbe`, le chemin de votre point de santé.
+#   4. `resources`    , mesurez la consommation réelle, puis ajustez.
+#
+# Le tag d'image est un emplacement `RELEASE_TAG`, jamais `latest` : un tag
+# mobile ne change pas le manifeste, Argo CD n'y voit aucun diff et ne
+# redéploie rien. À chaque décision favorable, Hadi remplace ce tag par le
+# SHA du commit approuvé et commite ce fichier sur la branche suivie par
+# Argo CD (commit marqué [skip ci]). Gardez ce fichier à l'emplacement
+# déclaré dans la configuration du pipeline (par défaut application.yaml à
+# la racine).
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ name }}
+  namespace: {{ namespace }}
+  labels:
+    app.kubernetes.io/name: {{ name }}
+    app.kubernetes.io/managed-by: orchestrateur-cicd
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ name }}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: {{ name }}
+          # À ADAPTER : préfixez par votre registre, ex. registry.exemple.org/{{ image }}
+          image: {{ image }}:RELEASE_TAG
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              # À ADAPTER : le port réel de votre application.
+              containerPort: {{ port }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            # À ADAPTER : sans limites, un seul pod peut assécher son nœud.
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            # À ADAPTER : sans cette sonde, le trafic arrive avant que
+            # l'application ne soit prête à le traiter.
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            # À ADAPTER : sans cette sonde, un pod figé n'est jamais redémarré.
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          volumeMounts:
+            # Requis par readOnlyRootFilesystem : la plupart des applications
+            # écrivent au moins des fichiers temporaires.
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ name }}
+  namespace: {{ namespace }}
+  labels:
+    app.kubernetes.io/name: {{ name }}
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: {{ name }}
+  ports:
+    - name: http
+      port: 80
+      # À ADAPTER : identique au containerPort ci-dessus.
+      targetPort: http

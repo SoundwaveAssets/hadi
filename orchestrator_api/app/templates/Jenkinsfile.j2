@@ -1,0 +1,130 @@
+// Jenkinsfile pour le pipeline '{{ repository }}'.
+//
+// À faire dans Jenkins avant utilisation :
+//   1. Créer un job de type "Pipeline" (pas "Freestyle").
+//   2. "Pipeline script from SCM" : pointer sur ce dépôt, ce fichier.
+//   3. Adapter la commande de build & test ci-dessous selon le projet.
+//   4. Adapter REGISTRY_URL dans le bloc "environment", le Dockerfile
+//      lui-même vit dans ce dépôt.
+//   5. Créer un Credential Jenkins pour le registre (Manage Jenkins >
+//      Credentials) et adapter REGISTRY_CREDS_ID s'il porte un autre nom.
+//   6. S'assurer que "sonar-scanner" est disponible sur l'agent Jenkins.
+//   7. Créer, dans SonarQube, un jeton d'analyse, et l'ajouter dans Jenkins
+//      sous l'identifiant "SONARQUBE_ANALYSIS_CREDS_ID".
+//   8. Créer un jeton API dans l'Orchestrateur (Dashboard > Jetons API -
+//      activer le module si besoin) et l'ajouter dans Jenkins comme
+//      Credential "Secret text" sous l'identifiant "ORCHESTRATOR_API_TOKEN".
+//      Sans lui, l'étape "Vérification de sécurité" ci-dessous échoue avant
+//      même de construire l'image, c'est le comportement voulu par défaut
+//      (fail-closed), pas une erreur de configuration à ignorer.
+
+pipeline {
+    agent any
+
+    environment {
+        REGISTRY_URL = '<A_ADAPTER : URL du registre>'
+        DOCKER_IMAGE = "${REGISTRY_URL}/{{ repository }}"
+        REGISTRY_CREDS_ID = '<A_ADAPTER : identifiant Credential Jenkins>'
+        // URL de l'Orchestrateur vue depuis CET agent Jenkins.
+        // Valeur issue de ORCHESTRATOR_PUBLIC_URL côté Orchestrateur.
+        ORCHESTRATOR_URL = '{{ orchestrator_url }}'
+    }
+
+    parameters {
+        string(name: 'COMMIT_HASH', defaultValue: '', description: 'Commit déclencheur')
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+                // checkout scm prend la tête de la branche : deux pushs
+                // rapprochés, et le build de A compilerait B. On se cale sur
+                // le commit reçu, et un job lancé sans COMMIT_HASH s'arrête.
+                sh '''
+                    [ -n "$COMMIT_HASH" ] || { echo "COMMIT_HASH manquant : ce job ne se lance que depuis l'Orchestrateur."; exit 1; }
+                    git checkout --quiet --detach "$COMMIT_HASH"
+                '''
+            }
+        }
+
+        stage('Build & Test') {
+            steps {
+                // à adapter selon le projet
+                echo 'Aucune commande de build/test definie.'
+            }
+        }
+
+        stage('Analyse SonarQube') {
+            steps {
+                withCredentials([string(credentialsId: 'SONARQUBE_ANALYSIS_CREDS_ID', variable: 'SONAR_TOKEN')]) {
+                    sh '''
+                        sonar-scanner \
+                          -Dsonar.projectKey={{ sonar_key }} \
+                          -Dsonar.sources=. \
+                          -Dsonar.host.url={{ sonar_host }} \
+                          -Dsonar.scm.revision=$COMMIT_HASH \
+                          -Dsonar.login=$SONAR_TOKEN
+                    '''
+                }
+            }
+        }
+
+        stage('Vérification de sécurité') {
+            // Interroge le Moteur de décision de l'Orchestrateur AVANT de
+            // construire l'image : un commit qui va être bloqué ou mis en
+            // attente n'a pas besoin d'une image Docker construite pour
+            // rien. N'attend PAS le job Jenkins entier côté Moteur de
+            // décision (seul "Build & Test" ci-dessus compte pour décider),
+            // donc pas de verrou mortel entre cette étape et la décision
+            // qu'elle attend.
+            steps {
+                withCredentials([string(credentialsId: 'ORCHESTRATOR_API_TOKEN', variable: 'ORCH_TOKEN')]) {
+                    sh '''
+                        HTTP_CODE=$(curl -s -o /tmp/gate_response.json -w "%{http_code}" \
+                          -H "Authorization: Bearer $ORCH_TOKEN" \
+                          "$ORCHESTRATOR_URL/api/decisions/gate/{{ repository }}/$COMMIT_HASH?wait=300")
+                        cat /tmp/gate_response.json
+                        echo
+                        if [ "$HTTP_CODE" != "200" ]; then
+                            echo "Décision de sécurité : construction refusée ou indisponible (HTTP $HTTP_CODE)."
+                            exit 1
+                        fi
+                        echo "Décision de sécurité : autorisé, poursuite de la construction."
+                    '''
+                }
+            }
+        }
+
+        stage('Build image Docker') {
+            steps {
+                script {
+                    // à adapter : --target si le Dockerfile définit plusieurs cibles
+                    customImage = docker.build("${DOCKER_IMAGE}:${params.COMMIT_HASH}")
+                }
+            }
+        }
+
+        stage('Push registre') {
+            steps {
+                script {
+                    // Seul le tag du commit est poussé ici, jamais 'latest'.
+                    // Le déploiement est décidé et écrit par l'Orchestrateur
+                    // (SHA épinglé dans le manifeste), pas par ce job.
+                    docker.withRegistry("http://${REGISTRY_URL}", REGISTRY_CREDS_ID) {
+                        customImage.push("${params.COMMIT_HASH}")
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            sh "docker rmi ${DOCKER_IMAGE}:${params.COMMIT_HASH} || true"
+        }
+        failure {
+            echo "Build en échec, consultez la console Jenkins."
+        }
+    }
+}

@@ -1,0 +1,60 @@
+name: Anomalie
+description: Signaler un comportement incorrect
+labels: ["anomalie"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Pour une faille de sécurité, n'ouvrez pas d'issue publique : voir [SECURITY.md](https://github.com/SoundwaveAssets/hadi/blob/main/SECURITY.md).
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Ce qui se passe
+      description: Ce que vous observez, et ce que vous attendiez à la place.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Comment le reproduire
+      placeholder: |
+        1. …
+        2. …
+        3. …
+    validations:
+      required: true
+
+  - type: textarea
+    id: journaux
+    attributes:
+      label: Journaux
+      description: Sortie de `docker compose logs api`, ou journal d'exécution du pipeline concerné.
+      render: shell
+
+  - type: input
+    id: version
+    attributes:
+      label: Version de Hadi
+      placeholder: "v0.1.0, ou le SHA du commit"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: deploiement
+    attributes:
+      label: Mode de déploiement
+      options:
+        - Docker Compose (images publiées)
+        - Docker Compose (construit depuis les sources)
+        - Sans Docker (make dev-api / dev-web)
+        - Kubernetes
+    validations:
+      required: true
+
+  - type: textarea
+    id: environnement
+    attributes:
+      label: Environnement
+      description: Système, et versions de Jenkins, SonarQube, Argo CD et de la forge utilisée.

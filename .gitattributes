@@ -1,0 +1,36 @@
+# Normalisation des fins de ligne.
+#
+# Sans ce fichier, Git a signalé "LF will be replaced by CRLF" sur 8 fichiers
+# lors de cet audit : chaque contributeur Windows réécrit alors des fichiers
+# qu'il n'a pas modifiés, et les diffs deviennent illisibles. Pour un projet
+# publié en open source, c'est la première source de bruit dans les PR.
+
+# Par défaut : LF dans le dépôt, conversion automatique à la sortie.
+* text=auto eol=lf
+
+# Scripts qui DOIVENT garder des CRLF pour s'exécuter sous Windows.
+*.ps1   text eol=crlf
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+
+# Scripts qui DOIVENT garder des LF (un CRLF casse le shebang sous Unix).
+*.sh            text eol=lf
+Makefile        text eol=lf
+Dockerfile      text eol=lf
+*.Dockerfile    text eol=lf
+Jenkinsfile     text eol=lf
+Caddyfile       text eol=lf
+
+# Binaires : jamais de conversion.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.pdf  binary
+*.woff binary
+*.woff2 binary
+*.exe  binary
+
+# Fichiers générés : exclus des statistiques de langage et du diff par défaut.
+frontend/package-lock.json  linguist-generated=true -diff

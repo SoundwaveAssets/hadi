@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Faille de sécurité
+    url: https://github.com/SoundwaveAssets/hadi/security/policy
+    about: Divulgation responsable. Jamais en issue publique.
+  - name: Question d'utilisation
+    url: https://github.com/SoundwaveAssets/hadi/discussions
+    about: Pour une question, préférez les discussions aux issues.

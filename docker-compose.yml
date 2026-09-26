@@ -1,0 +1,101 @@
+# =============================================================================
+#  Hadi : pile complète
+# =============================================================================
+#
+#   docker compose up
+#
+# Un seul port est publié sur la machine hôte : celui de l'interface web. L'API
+# et la base ne sont joignables que depuis le réseau interne de la pile.
+#
+# Le navigateur ne parle donc qu'à UNE origine : l'interface web relaie /api
+# vers l'API côté serveur. Conséquences : aucune question de CORS, et aucune
+# URL d'API figée dans le bundle client au moment du build.
+
+name: hadi
+
+services:
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-orchestrator}
+      POSTGRES_USER: ${DB_USER:-orchestrator}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changez-ce-mot-de-passe}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      # `pg_isready` seul répond OK avant que la base applicative n'existe :
+      # on interroge donc la base ET l'utilisateur réellement attendus, sinon
+      # l'API démarre trop tôt et échoue sur sa première requête.
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-orchestrator} -d ${DB_NAME:-orchestrator}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  api:
+    # Image publiée à chaque version (voir .github/workflows/release.yml).
+    # Pour construire depuis les sources :
+    #   docker compose -f docker-compose.yml -f docker-compose.build.yml up --build
+    image: ${HADI_IMAGE_API:-ghcr.io/soundwaveassets/hadi-api}:${HADI_VERSION:-latest}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-orchestrator}
+      DB_USER: ${DB_USER:-orchestrator}
+      DB_PASSWORD: ${DB_PASSWORD:-changez-ce-mot-de-passe}
+      ORCHESTRATOR_MASTER_KEY: ${ORCHESTRATOR_MASTER_KEY:-}
+      ORCHESTRATOR_JWT_SECRET: ${ORCHESTRATOR_JWT_SECRET:-}
+      ORCHESTRATOR_AUDIT_KEY: ${ORCHESTRATOR_AUDIT_KEY:-}
+      # Exigé par l'assistant d'installation. Vide : généré au premier
+      # démarrage et affiché par `docker compose logs api`.
+      ORCHESTRATOR_SETUP_TOKEN: ${ORCHESTRATOR_SETUP_TOKEN:-}
+      ORCHESTRATOR_WORKER_CONCURRENCY: ${ORCHESTRATOR_WORKER_CONCURRENCY:-2}
+      ORCHESTRATOR_JWT_EXPIRE_MINUTES: ${ORCHESTRATOR_JWT_EXPIRE_MINUTES:-120}
+      ORCHESTRATOR_IDLE_TIMEOUT_MINUTES: ${ORCHESTRATOR_IDLE_TIMEOUT_MINUTES:-15}
+      ORCHESTRATOR_REMEMBER_ME_DAYS: ${ORCHESTRATOR_REMEMBER_ME_DAYS:-14}
+      ORCHESTRATOR_SUDO_MINUTES: ${ORCHESTRATOR_SUDO_MINUTES:-10}
+      ORCHESTRATOR_LOGIN_RATE_LIMIT: ${ORCHESTRATOR_LOGIN_RATE_LIMIT:-30/minute}
+      ORCHESTRATOR_PIPELINE_STALL_MINUTES: ${ORCHESTRATOR_PIPELINE_STALL_MINUTES:-120}
+      ORCHESTRATOR_LOGIN_LOCKOUT_THRESHOLD: ${ORCHESTRATOR_LOGIN_LOCKOUT_THRESHOLD:-5}
+      ORCHESTRATOR_LOGIN_LOCKOUT_MINUTES: ${ORCHESTRATOR_LOGIN_LOCKOUT_MINUTES:-15}
+      ORCHESTRATOR_PASSWORD_MIN_LENGTH: ${ORCHESTRATOR_PASSWORD_MIN_LENGTH:-12}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
+      # URL de l'Orchestrateur telle que vos agents Jenkins la voient. Injectée
+      # dans les Jenkinsfile générés : à renseigner dès que Jenkins tourne
+      # ailleurs que sur la machine hôte.
+      ORCHESTRATOR_PUBLIC_URL: ${ORCHESTRATOR_PUBLIC_URL:-http://localhost:8000}
+      # Hôtes dont le certificat TLS n'est pas vérifié (auto-signés qu'aucun
+      # magasin ne reconnaîtra : typiquement un Argo CD déployé en cluster).
+      # Vide par défaut, à renseigner hôte par hôte, jamais globalement.
+      ORCHESTRATOR_TLS_SKIP_VERIFY_HOSTS: ${ORCHESTRATOR_TLS_SKIP_VERIFY_HOSTS:-}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      # "json" recommandé en production pour l'ingestion dans Loki/Datadog/ELK.
+      # "text" (défaut) pour la lisibilité en développement local.
+      LOG_FORMAT: ${LOG_FORMAT:-text}
+    volumes:
+      # Clés générées et profils comportementaux. Sans ce volume, un conteneur
+      # recréé régénère ses clés : et tout ce qui est chiffré en base devient
+      # définitivement illisible.
+      - api_state:/app/local_data
+    # Volontairement pas de `ports:` : l'API n'est joignable que par `web`.
+
+  web:
+    image: ${HADI_IMAGE_WEB:-ghcr.io/soundwaveassets/hadi-web}:${HADI_VERSION:-latest}
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      # Cible du relais /api, côté serveur Next. Jamais exposée au navigateur.
+      API_PROXY_TARGET: http://api:8000
+    ports:
+      - "${PUBLIC_PORT:-3000}:3000"
+
+volumes:
+  db_data:
+  api_state:

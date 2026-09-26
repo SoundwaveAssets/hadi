@@ -1,0 +1,163 @@
+# Publication d'une version.
+#
+# Déclenchée par un tag `vX.Y.Z` :
+#   1. images multi-architecture (amd64, arm64) poussées sur GHCR ;
+#   2. exécutables de la CLI construits sur les trois systèmes ;
+#   3. release GitHub avec les binaires et leurs empreintes SHA-256.
+#
+# Rien à configurer : GITHUB_TOKEN suffit à publier sur ghcr.io du même dépôt.
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version à publier (ex. v0.1.0)"
+        required: true
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  images:
+    name: Images · ${{ matrix.image }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - image: hadi-api
+            context: .
+            dockerfile: Dockerfile
+            target: api
+          - image: hadi-web
+            context: ./frontend
+            dockerfile: ./frontend/Dockerfile
+            target: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: QEMU (construction arm64 sur un agent amd64)
+        uses: docker/setup-qemu-action@v3
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Connexion à GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Étiquettes
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.image }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=${{ inputs.version }},enable=${{ github.event_name == 'workflow_dispatch' }}
+
+      - name: Construire et publier
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          target: ${{ matrix.target }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  cli:
+    name: CLI · ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artefact: hadi-linux
+          - os: macos-latest
+            artefact: hadi-macos
+          - os: windows-latest
+            artefact: hadi-windows.exe
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Dépendances
+        working-directory: cli
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller
+
+      - name: Construire l'exécutable
+        working-directory: cli
+        run: pyinstaller --onefile --console --name ${{ matrix.artefact }} main.py
+
+      # L'empreinte accompagne le binaire : c'est elle que la page « Client CLI »
+      # affiche, et que l'utilisateur compare avant d'exécuter le fichier.
+      - name: Empreinte SHA-256
+        working-directory: cli/dist
+        shell: bash
+        run: sha256sum ${{ matrix.artefact }} > ${{ matrix.artefact }}.sha256 || shasum -a 256 ${{ matrix.artefact }} > ${{ matrix.artefact }}.sha256
+
+      - name: Vérifier que le binaire démarre
+        working-directory: cli/dist
+        shell: bash
+        run: ./${{ matrix.artefact }} --version
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artefact }}
+          path: |
+            cli/dist/${{ matrix.artefact }}
+            cli/dist/${{ matrix.artefact }}.sha256
+
+  publication:
+    name: Release GitHub
+    needs: [images, cli]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artefacts
+          merge-multiple: true
+
+      - name: Publier la release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name != 'main' && github.ref_name || inputs.version }}
+          generate_release_notes: true
+          files: artefacts/*
+          body: |
+            ## Installation
+
+            ```bash
+            curl -O https://raw.githubusercontent.com/${{ github.repository }}/main/docker-compose.yml
+            docker compose up -d
+            ```
+
+            Images de cette version :
+
+            - `ghcr.io/${{ github.repository_owner }}/hadi-api:${{ github.ref_name }}`
+            - `ghcr.io/${{ github.repository_owner }}/hadi-web:${{ github.ref_name }}`
+
+            Les exécutables de la CLI sont attachés ci-dessous, chacun avec son
+            empreinte SHA-256 : comparez-la avant de lancer le fichier.

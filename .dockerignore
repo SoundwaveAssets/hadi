@@ -1,0 +1,39 @@
+# Contexte de build Docker.
+#
+# CRITIQUE : .gitignore ne protège QUE Git. Sans ce fichier, `COPY orchestrator_api/ .`
+# embarque local_data/ — donc la clé maître Fernet (qui déchiffre les jetons
+# Jenkins/SonarQube/Argo CD, le mot de passe du registre et le secret HMAC de
+# CHAQUE pipeline) et la clé de signature JWT — dans une couche de l'image,
+# que le Jenkinsfile pousse ensuite dans le registre Gitea.
+
+# --- Secrets & état d'exécution : ne doivent JAMAIS entrer dans une image ---
+**/local_data/
+**/db_config.json
+**/*.key
+**/*.env
+**/.env.local
+**/secret.local.yaml
+
+# --- Python ---
+**/__pycache__/
+**/*.pyc
+**/.venv/
+**/*.egg-info/
+**/.pytest_cache/
+
+# --- Node / Next.js ---
+**/node_modules/
+frontend/.next/
+frontend/out/
+
+# --- Artefacts de build CLI ---
+cli/build/
+cli/dist/
+cli/*.spec
+
+# --- Historique & outillage, inutiles au runtime ---
+.git/
+.github/
+logs/
+**/.DS_Store
+**/Thumbs.db

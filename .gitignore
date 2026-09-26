@@ -1,0 +1,38 @@
+# --- Python ---
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+
+# --- Exécutable CLI (cli/build_exe.ps1, servi par GET /api/cli/download) ---
+# Binaire volumineux et spécifique à la plateforme : jamais versionné, se
+# régénère à la demande sur la machine qui héberge l'API.
+cli/build/
+cli/dist/
+cli/*.spec
+
+# --- Caches d'outils (ruff, pytest, couverture) ---
+.ruff_cache/
+.pytest_cache/
+.coverage
+coverage.xml
+
+# --- Node / Next.js ---
+node_modules/
+frontend/.next/
+frontend/.next-*/
+frontend/out/
+
+# --- Secrets & runtime state (jamais versionnes) ---
+orchestrator_api/db_config.json
+orchestrator_api/local_data/
+*.env
+.env.local
+secret.local.yaml
+
+# --- OS / IDE ---
+.DS_Store
+Thumbs.db
+
+# --- Logs des services Windows de dev (scripts/install-dev-services.ps1) ---
+logs/

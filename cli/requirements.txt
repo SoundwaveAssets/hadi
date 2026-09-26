@@ -1,0 +1,10 @@
+typer==0.27.2
+rich==15.0.0
+httpx==0.27.0
+# Complétion shell (hadi --install-completion) : Typer la détecte via shellingham.
+shellingham==1.5.4
+# Jeton de session dans le magasin d'identifiants de l'OS (Credential Manager,
+# Trousseau, Secret Service) plutôt qu'en clair sur disque (hadi/session.py).
+keyring==25.6.0
+# Dossier de configuration conforme à chaque OS (hadi/settings.py).
+platformdirs==4.3.8

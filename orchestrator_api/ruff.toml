@@ -1,0 +1,18 @@
+# Lint de l'API et de la CLI (make lint-api). Règles : pyflakes, pycodestyle
+# (hors longueur de ligne : les commentaires explicatifs sont longs, c'est
+# voulu), tri des imports, bugbear.
+line-length = 140
+target-version = "py311"
+
+[lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E501", "B008", "UP045", "UP017", "UP042"]  # B008 : Depends() en défaut, idiome FastAPI ; UP045/UP017/UP042 : réécritures cosmétiques
+
+[lint.isort]
+# Nommés explicitement : le résultat ne dépend pas du dossier d'où ruff est lancé
+# (make lint-api et la CI le lancent depuis la racine du dépôt).
+known-first-party = ["app", "hadi", "alembic", "tests"]
+
+[lint.per-file-ignores]
+# Les variables d'environnement doivent être posées avant tout import de `app`.
+"**/tests/conftest.py" = ["E402"]

@@ -1,0 +1,18 @@
+# Construction depuis les sources, pour les contributeurs.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.build.yml up --build
+#
+# L'installation normale n'en a pas besoin : `docker compose up` tire les
+# images publiées (voir .github/workflows/release.yml).
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: api
+
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: web

@@ -1,0 +1,198 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Une nouvelle poussée annule le run précédent de la même branche : inutile de
+# payer trois OS pour un commit déjà remplacé.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+
+  # ---------------------------------------------------------------------------
+  # La promesse du projet est "s'exécute n'importe où". Une CI mono-OS ne la
+  # vérifie pas : elle la suppose. D'où cette matrice complète.
+  #
+  # Python 3.12 en plafond et non 3.13 : numpy==1.26.4 ne publie pas de wheels
+  # cp313, et une compilation depuis les sources échoue. Le jour où numpy sera
+  # relevé, ajouter "3.13" ici est la seule modification nécessaire.
+  # ---------------------------------------------------------------------------
+  api:
+    name: API · ${{ matrix.os }} · Python ${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: orchestrator_api/requirements.txt
+
+      - name: Installer les dépendances
+        working-directory: orchestrator_api
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov ruff
+
+      - name: Lint (ruff)
+        run: ruff check orchestrator_api orchestrator_api/alembic cli --config orchestrator_api/ruff.toml
+
+      - name: Tests avec couverture
+        working-directory: orchestrator_api
+        run: |
+          pytest --cov=app --cov-report=term-missing --cov-report=xml:coverage.xml --cov-fail-under=60
+
+      - name: Tests de la CLI
+        working-directory: cli
+        run: |
+          pip install -r requirements.txt
+          pytest -q
+
+      - name: Publier le rapport de couverture
+        # Uniquement sur ubuntu/3.12 pour éviter les doublons dans Codecov.
+        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
+        uses: codecov/codecov-action@v4
+        with:
+          files: orchestrator_api/coverage.xml
+          flags: api
+          fail_ci_if_error: false
+
+      - name: Vérifier que l'application s'importe réellement
+        # `pytest` seul n'exerce que le domaine pur. Cette étape attrape les
+        # erreurs d'import de la chaîne complète : routeurs, modèles, clients ,
+        # qui ne se manifesteraient sinon qu'au démarrage en production.
+        working-directory: orchestrator_api
+        run: python -c "import app.main; print('import OK')"
+
+  # ---------------------------------------------------------------------------
+  frontend:
+    name: Interface · ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      # `npm ci` et non `npm install` : échoue si le lockfile et package.json
+      # divergent, au lieu de résoudre silencieusement autre chose.
+      - name: Installer les dépendances
+        working-directory: frontend
+        run: npm ci
+
+      - name: Lint
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Build
+        working-directory: frontend
+        run: npm run build
+
+  # ---------------------------------------------------------------------------
+  images:
+    name: Images Docker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Construire l'image de l'API
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          target: api
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Construire l'image de l'interface
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          target: web
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ---------------------------------------------------------------------------
+  # Le test qui vérifie réellement la promesse du README : une machine vierge,
+  # deux commandes, une pile qui répond.
+  # ---------------------------------------------------------------------------
+  stack:
+    name: Démarrage de la pile complète
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Aucune préparation : la promesse du README est qu'une machine vierge
+      # démarre la pile sans écrire le moindre fichier de configuration.
+      # C'est exactement ce que ce job vérifie.
+      - name: Démarrer
+        run: docker compose up -d --build --wait --wait-timeout 300
+
+      - name: L'API répond
+        # 503 est la réponse attendue tant que l'assistant d'installation n'a
+        # pas été complété : elle prouve que l'API est vivante et connectée.
+        run: |
+          code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/health)
+          echo "GET /api/health -> $code"
+          [ "$code" = "200" ] || [ "$code" = "503" ]
+
+      - name: L'interface répond
+        run: curl -fsS http://localhost:3000/ > /dev/null
+
+      - name: Journaux en cas d'échec
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: Arrêter
+        if: always()
+        run: docker compose down -v
+
+  # ---------------------------------------------------------------------------
+  security:
+    name: Analyse des dépendances
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: pip-audit
+        working-directory: orchestrator_api
+        # Bloquant : tout avis sur une dépendance fait échouer le job.
+        run: |
+          pip install pip-audit
+          pip-audit -r requirements.txt
+
+      - name: npm audit
+        working-directory: frontend
+        run: npm audit --audit-level=high

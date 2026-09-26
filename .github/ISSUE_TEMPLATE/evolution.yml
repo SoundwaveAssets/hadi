@@ -1,0 +1,31 @@
+name: Évolution
+description: Proposer une fonctionnalité ou une amélioration
+labels: ["évolution"]
+body:
+  - type: textarea
+    id: besoin
+    attributes:
+      label: Le besoin
+      description: Quel problème concret cette évolution résoudrait-elle ? Décrivez la situation, pas encore la solution.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposition
+    attributes:
+      label: Ce que vous imaginez
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Ce que vous avez envisagé d'autre
+
+  - type: checkboxes
+    id: perimetre
+    attributes:
+      label: Périmètre
+      options:
+        - label: Cette évolution respecte le principe fail-closed (en l'absence de preuve, rien ne passe)
+        - label: Je suis prêt à contribuer au code
