@@ -7,12 +7,12 @@
  *
  * Registre utilitaire : lisibilité des données avant tout, états visibles d'un
  * coup d'œil, chrome sombre pour cadrer une page claire. Les codes CI/CD
- * classiques sont repris tels quels — bleu d'action, vert succès, rouge échec,
- * jaune instable, gris attente — parce qu'un développeur les lit sans légende.
+ * classiques sont repris tels quels : bleu d'action, vert succès, rouge échec,
+ * jaune instable, gris attente : parce qu'un développeur les lit sans légende.
  *
  * Polices système uniquement. Deux raisons : un outil de développement n'a
  * pas besoin d'une identité typographique, et surtout le projet promet de
- * tourner partout — un build qui télécharge des polices depuis Google échoue
+ * tourner partout : un build qui télécharge des polices depuis Google échoue
  * sur un réseau restreint. `ui-monospace` porte toute la donnée technique
  * (hashes, durées, journaux), comme sur n'importe quelle console.
  *
@@ -28,7 +28,7 @@
   --color-surface-2: #f5f7f9;
 
   /* Chrome : barre supérieure et fond du menu latéral, sombres comme sur
-     Jenkins — ils cadrent la page sans concurrencer son contenu. */
+     Jenkins : ils cadrent la page sans concurrencer son contenu. */
   --color-chrome: #2b3a42;
   --color-chrome-2: #344751;
   --color-chrome-ink: #e4eaee;

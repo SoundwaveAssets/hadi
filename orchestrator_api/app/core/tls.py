@@ -5,7 +5,7 @@ httpx vérifie contre certifi, pas contre le magasin de l'OS : une autorité
 locale (mkcert, CA d'entreprise) n'est jamais reconnue. `truststore` branche
 la vérification sur le magasin du système, sans rien désactiver.
 
-Reste le cas du certificat auto-signé sans autorité — celui d'Argo CD
+Reste le cas du certificat auto-signé sans autorité : celui d'Argo CD
 déployé dans un cluster, c'est-à-dire l'immense majorité des installations.
 Aucun magasin ne le reconnaîtra jamais. Deux issues honnêtes : importer son
 certificat dans le magasin de l'OS, ou déclarer explicitement l'hôte comme

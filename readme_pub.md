@@ -4,7 +4,7 @@
 
 **Une passerelle de décision entre votre dépôt et votre production.**
 
-Hadi s'intercale dans votre chaîne CI/CD existante : il écoute les pushs, fait construire et analyser le commit reçu, confronte les preuves obtenues à des règles explicites, puis **décide** : autoriser, mettre en attente un humain, ou bloquer. Chaque décision et chaque déploiement sont inscrits dans un journal scellé, vérifiable à tout instant.
+Hadi s'intercale dans votre chaîne CI/CD existante : il écoute les pushs, fait construire et analyser le commit reçu, confronte les preuves obtenues à des règles explicites, puis **décide** — autoriser, mettre en attente un humain, ou bloquer. Chaque décision et chaque déploiement sont inscrits dans un journal scellé, vérifiable à tout instant.
 
 [![Licence](https://img.shields.io/badge/licence-Apache--2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
@@ -70,7 +70,7 @@ Hadi répond à trois questions que les outils, pris séparément, ne posent pas
 
 | Question | Réponse de Hadi |
 |---|---|
-| **Ce commit précis a-t-il été analysé ?** | L'analyse SonarQube est corrélée au SHA reçu. Absente ou portant sur un autre commit, elle vaut *non vérifiable* : jamais *propre*. |
+| **Ce commit précis a-t-il été analysé ?** | L'analyse SonarQube est corrélée au SHA reçu. Absente ou portant sur un autre commit, elle vaut *non vérifiable* — jamais *propre*. |
 | **Qui a autorisé ce déploiement, et sur quelles preuves ?** | Chaque décision est scellée (HMAC chaîné) avec les preuves qui l'ont motivée et le critère appliqué. |
 | **Ce qui tourne en production correspond-il à ce qui a été approuvé ?** | Le SHA approuvé est inscrit dans le manifeste, Argo CD synchronise cette révision, et « déployé » n'est posé qu'après avoir **observé l'image sur le cluster**. |
 
@@ -113,7 +113,7 @@ flowchart LR
 
 | Étape | Ce qu'elle demande | Peut-on la passer ? |
 |---|---|---|
-| **Jeton d'installation** | Le jeton affiché par `docker compose logs api`, ou fixé par `ORCHESTRATOR_SETUP_TOKEN` | Non : il empêche un tiers du réseau d'initialiser l'instance à votre place |
+| **Jeton d'installation** | Le jeton affiché par `docker compose logs api`, ou fixé par `ORCHESTRATOR_SETUP_TOKEN` | Non — il empêche un tiers du réseau d'initialiser l'instance à votre place |
 | **Base de données** | Hôte, port, base, utilisateur, mot de passe | Non, mais la pile Docker les fournit déjà |
 | **Intégrations** | Forge, Jenkins, SonarQube, Argo CD, avec un bouton *Tester* pour chacun | Oui, tout reste modifiable depuis *Intégrations* |
 | **Récapitulatif** | Confirmation | Non |
@@ -165,7 +165,7 @@ Python 3.13 n'est pas supporté tant que `numpy==1.26.4` ne publie pas de *wheel
 <details>
 <summary><b>Derrière un reverse proxy</b></summary>
 
-Un seul port est à exposer : celui de l'interface. Elle relaie `/api` vers l'API côté serveur, donc aucune question de CORS, et aucune URL d'API figée dans le bundle du navigateur.
+Un seul port est à exposer : celui de l'interface. Elle relaie `/api` vers l'API côté serveur — donc aucune question de CORS, et aucune URL d'API figée dans le bundle du navigateur.
 
 ```nginx
 server {
@@ -234,7 +234,7 @@ sequenceDiagram
 | 3 | **Build** | Job Jenkins déclenché avec `COMMIT_HASH` en paramètre ; le job se cale sur ce SHA (`git checkout --detach`), pas sur la tête de branche | Build en échec → blocage immédiat, sans même consulter SonarQube |
 | 4 | **Analyse** | Métriques SonarQube du projet, corrélées au SHA via `sonar.scm.revision` | Analyse absente ou portant sur un autre commit → *non vérifiable* → validation humaine |
 | 5 | **Comportement** | Score d'anomalie du pousseur, calculé sur son propre historique | Moteur en panne → score `None`, distinct de `0.0` → validation humaine |
-| 6 | **Décision** | Règle pure appliquée aux preuves, puis durcissement éventuel par les politiques de conformité | - |
+| 6 | **Décision** | Règle pure appliquée aux preuves, puis durcissement éventuel par les politiques de conformité | — |
 | 7 | **Écriture GitOps** | Le SHA approuvé remplace le tag de l'image dans le manifeste, commité sur la branche suivie par Argo CD | Aucune ligne `image:` correspondante → échec explicite, jamais un faux `DEPLOYED` |
 | 8 | **Synchronisation** | Argo CD synchronise cette révision précise | Échec → `DEPLOY_FAILED` scellé avec sa raison |
 | 9 | **Preuve** | L'image réellement servie par l'application est relue et comparée au SHA | Image différente → `DEPLOY_FAILED` |
@@ -249,7 +249,7 @@ stateDiagram-v2
     PENDING --> DEPLOYING : autorisé
     PENDING --> ANALYSIS_FAILED : outil durablement injoignable
     WAITING_HUMAN --> DEROGATION_PENDING : 1re validation
-    DEROGATION_PENDING --> DEPLOYING : 2e validation, par une autre personne
+    DEROGATION_PENDING --> DEPLOYING : 2e validation, par quelqu'un d'autre
     BLOCKED --> DEROGATION_PENDING : dérogation demandée puis validée
     DEPLOYING --> DEPLOYED : image observée sur le cluster
     DEPLOYING --> DEPLOY_FAILED : manifeste, synchronisation ou image
@@ -267,24 +267,24 @@ Le vocabulaire est tenu par une énumération unique ([`app/domain/pipeline_stat
 | `WAITING_HUMAN` | Analyse terminée, un humain doit trancher | non | non |
 | `DEROGATION_PENDING` | Première validation obtenue, la seconde manque | non | non |
 | `DEPLOYING` | Autorisé, déploiement en cours | non | **oui** |
-| `DEPLOYED` | Image du commit observée sur le cluster | **oui** | - |
-| `DEPLOY_FAILED` | Déploiement interrompu, raison journalisée | **oui** | - |
-| `BLOCKED` | Refusé par le moteur de décision | **oui** | - |
-| `ANALYSIS_FAILED` | Le workflow d'analyse lui-même n'a pas abouti | **oui** | - |
+| `DEPLOYED` | Image du commit observée sur le cluster | **oui** | — |
+| `DEPLOY_FAILED` | Déploiement interrompu, raison journalisée | **oui** | — |
+| `BLOCKED` | Refusé par le moteur de décision | **oui** | — |
+| `ANALYSIS_FAILED` | Le workflow d'analyse lui-même n'a pas abouti | **oui** | — |
 
 > [!NOTE]
-> Une attente humaine **n'expire jamais**. Seuls `PENDING` et `DEPLOYING`, les états où un travail est censé progresser, sont repassés en échec après `ORCHESTRATOR_PIPELINE_STALL_MINUTES` (2 h par défaut). Un worker arrêté ne laisse donc plus de pipeline figé indéfiniment, mais un dossier qui attend un arbitrage attend aussi longtemps qu'il le faut.
+> Une attente humaine **n'expire jamais**. Seuls `PENDING` et `DEPLOYING` — les états où un travail est censé progresser — sont repassés en échec après `ORCHESTRATOR_PIPELINE_STALL_MINUTES` (2 h par défaut). Un worker arrêté ne laisse donc plus de pipeline figé indéfiniment, mais un dossier qui attend un arbitrage attend aussi longtemps qu'il le faut.
 
 ### Les décisions possibles
 
 | Valeur | Sens | Réponse du point de contrôle CI |
 |---|---|---|
-| `AUTO_AUTH` | Autorisation automatique | **200** : le job continue |
-| `WAITING_HUMAN` | Mise en attente d'un arbitrage | 409 : le job échoue |
-| `BLOCKED` | Refus | 409 : le job échoue |
-| `DEROGATION_REQUESTED` | Réexamen demandé par le développeur | 409 : le job échoue |
-| `DEROGATION_PENDING` | Première validation, il en manque une | 409 : le job échoue |
-| `DEROGATION` | Dérogation accordée à quatre yeux | **200** : le job continue |
+| `AUTO_AUTH` | Autorisation automatique | **200** — le job continue |
+| `WAITING_HUMAN` | Mise en attente d'un arbitrage | 409 — le job échoue |
+| `BLOCKED` | Refus | 409 — le job échoue |
+| `DEROGATION_REQUESTED` | Réexamen demandé par le développeur | 409 — le job échoue |
+| `DEROGATION_PENDING` | Première validation, il en manque une | 409 — le job échoue |
+| `DEROGATION` | Dérogation accordée à quatre yeux | **200** — le job continue |
 | `DEPLOYED` · `DEPLOY_FAILED` | Issues de déploiement, journalisées après coup | ignorées : ce ne sont pas des verdicts |
 
 ---
@@ -297,7 +297,7 @@ Le vocabulaire est tenu par une énumération unique ([`app/domain/pipeline_stat
 
 | # | Condition | Verdict |
 |---|---|---|
-| 1 | Build Jenkins en échec | **Bloqué** : aucun artefact valide à déployer |
+| 1 | Build Jenkins en échec | **Bloqué** — aucun artefact valide à déployer |
 | 2 | Moteur désactivé pour ce pipeline | **Autorisé**, preuves tout de même tracées |
 | 3 | Anomalie comportementale critique **et** problème de sécurité | **Bloqué** |
 | 4 | L'une des deux dimensions seule | **Validation humaine** |
@@ -315,7 +315,7 @@ Réglable globalement (*Configuration*), et surchargeable dépôt par dépôt (*
 | `quality_gate` | Le verdict du [Quality Gate](https://docs.sonarsource.com/sonarqube-server/latest/instance-administration/analysis-functions/quality-gates/) du projet | La politique est déjà définie dans SonarQube et couvre plus que la sécurité (couverture, duplication, hotspots) |
 | `total` | Toute vulnérabilité du projet, même ancienne | Dépôts qui doivent rester à zéro |
 
-**Qualité ou sécurité ?** Hadi lit et affiche l'ensemble des métriques du projet (bugs, notes de fiabilité et de maintenabilité, hotspots revus, couverture, duplication) sur la fiche de chaque pipeline. Mais ce qui **pèse sur la décision** dépend du critère retenu :
+**Qualité ou sécurité ?** Hadi lit et affiche l'ensemble des métriques du projet — bugs, notes de fiabilité et de maintenabilité, hotspots revus, couverture, duplication — sur la fiche de chaque pipeline. Mais ce qui **pèse sur la décision** dépend du critère retenu :
 
 | Critère | Ce qui décide |
 |---|---|
@@ -323,7 +323,7 @@ Réglable globalement (*Configuration*), et surchargeable dépôt par dépôt (*
 | `quality_gate` | **Tout ce que contient votre Quality Gate** : couverture, duplication, fiabilité, maintenabilité, hotspots. C'est le seul critère qui fait entrer la qualité au sens large dans la décision. |
 
 > [!WARNING]
-> Une mesure indisponible **ne se remplace jamais par une autre**. Si `new_code` est demandé et que la métrique manque, typiquement parce qu'aucune période de code neuf n'est définie sur le projet SonarQube, la décision part en validation humaine **en le disant** (« métrique `new_vulnerabilities` absente »). Un repli silencieux sur un autre critère rendrait la décision imprévisible et inexplicable en audit.
+> Une mesure indisponible **ne se remplace jamais par une autre**. Si `new_code` est demandé et que la métrique manque — typiquement parce qu'aucune période de code neuf n'est définie sur le projet SonarQube — la décision part en validation humaine **en le disant** (« métrique `new_vulnerabilities` absente »). Un repli silencieux sur un autre critère rendrait la décision imprévisible et inexplicable en audit.
 
 ### Le score comportemental
 
@@ -333,10 +333,10 @@ Un [IsolationForest](https://scikit-learn.org/stable/modules/generated/sklearn.e
 |---|---|
 | Caractéristiques observées | heure du push, nombre de fichiers modifiés, nombre de commits, proportion de fichiers jamais touchés |
 | Historique conservé | 200 pushs par développeur, en base (`developer_profiles`) |
-| Démarrage à froid | En dessous de 8 pushs observés, le score est neutre et le dit : aucun chiffre inventé |
+| Démarrage à froid | En dessous de 8 pushs observés, le score est neutre et le dit — aucun chiffre inventé |
 | Échelle du score | Rang percentile du push dans la distribution des scores de son propre historique : borné [0, 1] par construction, sans constante arbitraire |
 | Explication | Les caractéristiques à plus de 2 écarts-types de la moyenne du développeur sont nommées en clair |
-| Mode observation | **Activé par défaut** : le score est calculé, tracé, affiché, mais ne pèse pas sur la décision |
+| Mode observation | **Activé par défaut** : le score est calculé, tracé, affiché — mais ne pèse pas sur la décision |
 
 | Seuil | Défaut | Effet |
 |---|---|---|
@@ -347,7 +347,7 @@ Les deux seuils sont validés à la construction : hors de `[0, 1]`, ou inversé
 
 ### Les politiques de conformité
 
-Une politique ne peut que **durcir** un verdict (`AUTO_AUTH` devient `WAITING_HUMAN`), jamais l'assouplir. Aucune règle ne peut transformer un `BLOCKED` en autorisation.
+Une politique ne peut que **durcir** un verdict — `AUTO_AUTH` → `WAITING_HUMAN` — jamais l'assouplir. Aucune règle ne peut transformer un `BLOCKED` en autorisation.
 
 | Type | Réglages | Effet |
 |---|---|---|
@@ -457,7 +457,7 @@ Enregistrez le dépôt dans **Dépôts suivis**, générez un secret de webhook 
 |---|---|---|---|
 | Gitea | `https://hadi.exemple.org/api/webhooks/gitea` | `application/json` | `X-Gitea-Signature` (ou `X-Hub-Signature-256`) |
 | GitHub | `https://hadi.exemple.org/api/webhooks/github` | `application/json` | `X-Hub-Signature-256` |
-| GitLab | `https://hadi.exemple.org/api/webhooks/gitlab` | - | `X-Gitlab-Token` (jeton secret, comparé à temps constant) |
+| GitLab | `https://hadi.exemple.org/api/webhooks/gitlab` | — | `X-Gitlab-Token` (jeton secret, comparé à temps constant) |
 
 Événement à cocher : **push** uniquement.
 
@@ -511,7 +511,7 @@ sh 'hadi gate mon-depot "$COMMIT_HASH" --wait 300'
 Le job échoue si Hadi n'autorise pas : c'est le fail-closed jusque dans votre pipeline.
 
 > [!TIP]
-> Le point de contrôle n'attend **pas** la fin du job Jenkins qui l'appelle : seul l'étage *Build & Test* compte pour décider. Il n'y a donc aucun verrou mortel entre l'étape et la décision qu'elle attend. L'attente est plafonnée à 300 secondes ; au-delà, le job échoue et un humain regarde.
+> Le point de contrôle n'attend **pas** la fin du job Jenkins qui l'appelle — seul l'étage *Build & Test* compte pour décider. Il n'y a donc aucun verrou mortel entre l'étape et la décision qu'elle attend. L'attente est plafonnée à 300 secondes ; au-delà, le job échoue et un humain regarde.
 
 À préparer dans Jenkins : un *Credential* `ORCHESTRATOR_API_TOKEN` (module *Jetons API*), un *Credential* `SONARQUBE_ANALYSIS_CREDS_ID`, un *Credential* pour le registre, et `sonar-scanner` disponible sur l'agent.
 
@@ -567,7 +567,7 @@ kubectl -n mon-namespace create secret docker-registry registre \
   --docker-username=<compte> --docker-password=<jeton>
 ```
 
-Puis référencez-le dans le manifeste que synchronise Argo CD : **pas seulement dans le cluster**, sinon Argo CD le supprimera à la prochaine synchronisation :
+Puis référencez-le dans le manifeste que synchronise Argo CD — **pas seulement dans le cluster**, sinon Argo CD le supprimera à la prochaine synchronisation :
 
 ```yaml
 spec:
@@ -581,9 +581,9 @@ Un dépôt suivi tient en une ligne ; tout le reste est optionnel et retombe sur
 
 | Champ | Vide signifie | Remarque |
 |---|---|---|
-| `repository` | - | Nom exact du dépôt sur la forge (`repository.name`, ou `project.name` chez GitLab) |
+| `repository` | — | Nom exact du dépôt sur la forge (`repository.name`, ou `project.name` chez GitLab) |
 | `vcs_provider` | `gitea` | Fixe le format du webhook, la vérification de signature et l'API d'écriture |
-| `webhook_secret` | - | Chiffré au repos, jamais renvoyé en clair |
+| `webhook_secret` | — | Chiffré au repos, jamais renvoyé en clair |
 | `jenkins_job_name` | le nom du dépôt | |
 | `sonarqube_project_key` | le nom du dépôt | |
 | `argocd_app_name` | le nom du dépôt | |
@@ -603,18 +603,18 @@ Trois cases d'auto-provisionnement (projet SonarQube, job Jenkins, application A
 | Action | Développeur | Administrateur | Responsable sécurité | Direction |
 |---|:---:|:---:|:---:|:---:|
 | Voir ses pipelines et leurs journaux | ✅ | ✅ | ✅ | ✅ |
-| Demander une dérogation sur son pipeline | ✅ | ✅ | ✅ | - |
-| Approuver une dérogation (quatre yeux) | - | ✅ | ✅ | - |
-| Enregistrer et régler un dépôt suivi | - | ✅ | ✅ | - |
-| Politiques de conformité | - | ✅ | ✅ | - |
-| Intégrations, seuils, critère de sécurité | - | ✅ | ✅ | - |
-| Consulter les journaux scellés | - | ✅ | ✅ | ✅ |
-| Exports CSV et PDF | - | ✅ | ✅ | ✅ |
-| Comptes, rôles, identités de forge | - | ✅ | - | - |
-| Activer ou désactiver un module | - | ✅ | - | - |
-| Jetons de service | - | ✅ | - | - |
+| Demander une dérogation sur son pipeline | ✅ | ✅ | ✅ | — |
+| Approuver une dérogation (quatre yeux) | — | ✅ | ✅ | — |
+| Enregistrer et régler un dépôt suivi | — | ✅ | ✅ | — |
+| Politiques de conformité | — | ✅ | ✅ | — |
+| Intégrations, seuils, critère de sécurité | — | ✅ | ✅ | — |
+| Consulter les journaux scellés | — | ✅ | ✅ | ✅ |
+| Exports CSV et PDF | — | ✅ | ✅ | ✅ |
+| Comptes, rôles, identités de forge | — | ✅ | — | — |
+| Activer ou désactiver un module | — | ✅ | — | — |
+| Jetons de service | — | ✅ | — | — |
 
-Un **jeton de service** porte les droits d'un compte, à deux exceptions près : il ne peut pas approuver une dérogation, et il se voit refuser toute action exigeant une confirmation de mot de passe, puisqu'il n'en a pas.
+Un **jeton de service** porte les droits d'un compte, à deux exceptions près : il ne peut pas approuver une dérogation, et il se voit refuser toute action exigeant une confirmation de mot de passe — il n'en a pas.
 
 ---
 
@@ -751,7 +751,7 @@ L'authentification se fait par jeton `Bearer` : celui d'une session (`POST /api/
 |---|---|---|
 | `POST` | `/auth/login` | Ouvre une session. Accepte `remember_me` ; limité par adresse IP |
 | `POST` | `/auth/refresh` | Prolonge la session en cours |
-| `GET` | `/auth/session-policy` | Durées appliquées par l'instance : lu par l'interface, accessible sans session |
+| `GET` | `/auth/session-policy` | Durées appliquées par l'instance — lu par l'interface, accessible sans session |
 | `GET` · `PATCH` | `/auth/me` | Profil du compte connecté |
 | `POST` | `/auth/change-password` | Change son propre mot de passe |
 
@@ -880,8 +880,8 @@ flowchart LR
     K -. clé .-> E3
 ```
 
-- **Journal des décisions** : chaque verdict, ses preuves, le critère appliqué, la provenance de l'identité, et l'issue du déploiement.
-- **Journal des actions d'administration** : comptes, rôles, intégrations, modules, politiques, connexions réussies et échouées, verrouillages. Les secrets n'y figurent jamais : seulement le fait qu'ils ont été (re)définis.
+- **Journal des décisions** — chaque verdict, ses preuves, le critère appliqué, la provenance de l'identité, et l'issue du déploiement.
+- **Journal des actions d'administration** — comptes, rôles, intégrations, modules, politiques, connexions réussies et échouées, verrouillages. Les secrets n'y figurent jamais : seulement le fait qu'ils ont été (re)définis.
 
 Le schéma des sceaux est **versionné** : une entrée écrite par une version antérieure reste vérifiable avec son propre schéma, sans réécriture ni perte de preuve.
 
@@ -901,13 +901,13 @@ Les écritures concurrentes dans une même chaîne sont sérialisées par un ver
 
 ### Une session ouverte ne suffit pas
 
-Le tableau de bord se verrouille après inactivité ; la session, courte, ne se prolonge que tant que quelqu'un travaille : un poste abandonné expire. Les actions les plus privilégiées (créer un jeton de service, réinitialiser le mot de passe d'un tiers, changer un jeton d'outil ou la connexion à la base) **redemandent le mot de passe**, même à une session valide, et la confirmation ne vaut que `ORCHESTRATOR_SUDO_MINUTES`.
+Le tableau de bord se verrouille après inactivité ; la session, courte, ne se prolonge que tant que quelqu'un travaille — un poste abandonné expire. Les actions les plus privilégiées (créer un jeton de service, réinitialiser le mot de passe d'un tiers, changer un jeton d'outil ou la connexion à la base) **redemandent le mot de passe**, même à une session valide, et la confirmation ne vaut que `ORCHESTRATOR_SUDO_MINUTES`.
 
 L'option « garder la session ouverte » échange cette protection contre du confort : la session dure `ORCHESTRATOR_REMEMBER_ME_DAYS` jours et le verrouillage par inactivité ne s'applique plus. Le choix est journalisé dans la chaîne d'administration, et `ORCHESTRATOR_REMEMBER_ME_DAYS=0` retire l'option de l'écran de connexion pour toute l'instance.
 
 ### Le reste
 
-- Secrets chiffrés en base ([Fernet](https://cryptography.io/en/latest/fernet/), AES-128), jamais renvoyés en clair par l'API : seulement leur statut *configuré*.
+- Secrets chiffrés en base ([Fernet](https://cryptography.io/en/latest/fernet/), AES-128), jamais renvoyés en clair par l'API — seulement leur statut *configuré*.
 - Un secret de webhook **par dépôt**, jamais un secret global.
 - Conteneurs non-root, Swagger désactivable, en-têtes de sécurité et CSP stricte sur l'interface.
 - Vérification TLS adossée au magasin du système ; exception explicite, hôte par hôte, jamais globale.
@@ -987,7 +987,7 @@ livenessProbe:
 
 ### Journaux
 
-`LOG_FORMAT=json` produit des journaux structurés, prêts pour [Loki](https://grafana.com/oss/loki/), Datadog ou ELK. `LOG_FORMAT=text` reste plus lisible en développement. `LOG_LEVEL` accepte `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL` : toute autre valeur fait échouer le démarrage avec un message explicite.
+`LOG_FORMAT=json` produit des journaux structurés, prêts pour [Loki](https://grafana.com/oss/loki/), Datadog ou ELK. `LOG_FORMAT=text` reste plus lisible en développement. `LOG_LEVEL` accepte `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL` — toute autre valeur fait échouer le démarrage avec un message explicite.
 
 ### Dimensionnement
 
@@ -1035,19 +1035,19 @@ La commande rejoue les deux chaînes et signale la première entrée dont le sce
 
 ```mermaid
 flowchart LR
-    UI["Interface Next.js"]
-    CLI["CLI hadi"]
-    R["Routes FastAPI"]
-    D["domain, règles pures"]
-    S["Services : Jenkins, SonarQube, Argo CD"]
-    P["Providers : Gitea, GitHub, GitLab"]
-    F["Flows : analyse, déploiement"]
-    Q["File de travail procrastinate"]
-    PG[("PostgreSQL")]
-    LD["local_data : clés, ancrage"]
+    UI[Interface Next.js]
+    CLI[CLI hadi]
+    R[Routes FastAPI]
+    D[domain : règles pures]
+    S[Services : Jenkins, SonarQube, Argo CD]
+    P[Providers : Gitea, GitHub, GitLab]
+    F[Flows : analyse, déploiement]
+    Q[File de travail procrastinate]
+    PG[(PostgreSQL)]
+    LD[local_data : clés, ancrage]
 
-    UI -->|"/api"| R
-    CLI -->|"HTTPS"| R
+    UI -->|/api| R
+    CLI -->|HTTPS| R
     R --> D
     R --> S
     S --> P
@@ -1056,7 +1056,7 @@ flowchart LR
     F --> S
     R --> PG
     Q --> PG
-    D -.->|"scellement"| LD
+    D -.->|scellement| LD
 ```
 
 ```
@@ -1070,7 +1070,7 @@ orchestrator/
 │   ├── app/modules/           Registre des modules activables
 │   ├── app/models/            Tables SQLModel et chaînes scellées
 │   ├── app/templates/         Jenkinsfile et manifeste de départ (Jinja2)
-│   ├── alembic/               Migrations : seule source du schéma
+│   ├── alembic/               Migrations — seule source du schéma
 │   └── tests/                 Suite de tests
 ├── frontend/                  Interface Next.js (App Router, React Query, Tailwind)
 ├── cli/                       Client en ligne de commande (Typer)
@@ -1079,7 +1079,7 @@ orchestrator/
 └── .github/workflows/         CI Linux · macOS · Windows, et publication des versions
 ```
 
-Le cœur de décision est volontairement isolé : **`app/domain/` n'importe ni FastAPI, ni SQLModel, ni httpx**, et un test le vérifie.
+Le cœur de décision est volontairement isolé : **`app/domain/` n'importe ni FastAPI, ni SQLModel, ni httpx** — et un test le vérifie.
 
 Sous le capot : [FastAPI](https://fastapi.tiangolo.com/) · [SQLModel](https://sqlmodel.tiangolo.com/) · [Alembic](https://alembic.sqlalchemy.org/) · [procrastinate](https://procrastinate.readthedocs.io/) · [tenacity](https://tenacity.readthedocs.io/) · [Typer](https://typer.tiangolo.com/) · [scikit-learn](https://scikit-learn.org/) · [Next.js](https://nextjs.org/) · [TanStack Query](https://tanstack.com/query/latest) · [Tailwind CSS](https://tailwindcss.com/).
 
@@ -1104,7 +1104,7 @@ Sous le capot : [FastAPI](https://fastapi.tiangolo.com/) · [SQLModel](https://s
 | `make install` | Dépendances des trois projets |
 | `make clean` | Arrêt **et suppression des volumes** (base et clés comprises) |
 
-Le guide complet (conventions, structure d'une contribution, processus de revue) est dans [`CONTRIBUTING.md`](CONTRIBUTING.md).
+Le guide complet — conventions, structure d'une contribution, processus de revue — est dans [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ---
 
@@ -1125,9 +1125,9 @@ La CI vérifie tout cela sur **trois systèmes** (Linux, macOS, Windows) et **de
 
 ## 19. Portabilité
 
-Hadi tourne partout où Docker tourne (Windows, macOS, Linux) et la CI le vérifie sur les trois. Une seule image pour tous les environnements : aucune adresse n'est figée à la construction.
+Hadi tourne partout où Docker tourne — Windows, macOS, Linux — et la CI le vérifie sur les trois. Une seule image pour tous les environnements : aucune adresse n'est figée à la construction.
 
-Ce dont Hadi dépend réellement : **PostgreSQL**, et les outils qu'il orchestre. Ni Redis, ni courtier de messages, ni service d'orchestration tiers : la file de travail vit dans votre base.
+Ce dont Hadi dépend réellement : **PostgreSQL**, et les outils qu'il orchestre. Ni Redis, ni courtier de messages, ni service d'orchestration tiers — la file de travail vit dans votre base.
 
 ---
 
@@ -1182,7 +1182,7 @@ Pas par défaut : le **mode observation** est activé, le score est calculé, tr
 <details>
 <summary><b>Peut-on forcer un déploiement en urgence ?</b></summary>
 
-Oui, par une dérogation, mais à quatre yeux : deux personnes distinctes, chacune laissant une entrée scellée avec sa justification. Un incident de production reste traçable sans être ingérable.
+Oui, par une dérogation — mais à quatre yeux : deux personnes distinctes, chacune laissant une entrée scellée avec sa justification. Un incident de production reste traçable sans être ingérable.
 
 </details>
 
@@ -1213,7 +1213,7 @@ Vous ne pouvez pas la changer sans invalider la vérification des entrées déj�
 
 | Terme | Définition |
 |---|---|
-| **Fail-closed** | En l'absence de preuve, on refuse. Laisser passer par défaut est précisément ce que Hadi existe pour supprimer. |
+| **Fail-closed** | En l'absence de preuve, on refuse. L'inverse — laisser passer par défaut — est le défaut que Hadi existe pour supprimer. |
 | **Décision** | Verdict du moteur sur un commit : autorisé, en attente, bloqué. |
 | **Issue de déploiement** | Ce qui est réellement arrivé après une autorisation : `DEPLOYED` ou `DEPLOY_FAILED`. Journalisée, mais ce n'est pas un verdict. |
 | **Dérogation** | Autorisation accordée par des humains contre l'avis du moteur, à quatre yeux, toujours justifiée. |
@@ -1242,4 +1242,4 @@ Hadi est écrit et maintenu à la main. Les outils qui ont servi à le construir
 
 ## Licence
 
-Distribué sous licence **[Apache-2.0](LICENSE)**, choisie pour sa concession explicite de brevets (absente de la licence MIT), sa compatibilité avec la plupart des licences d'entreprise, et parce qu'elle est le standard de l'écosystème DevOps : Kubernetes, Terraform et Argo CD l'utilisent.
+Distribué sous licence **[Apache-2.0](LICENSE)**, choisie pour sa concession explicite de brevets (absente de la licence MIT), sa compatibilité avec la plupart des licences d'entreprise, et parce qu'elle est le standard de l'écosystème DevOps — Kubernetes, Terraform et Argo CD l'utilisent.

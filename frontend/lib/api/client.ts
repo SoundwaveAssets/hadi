@@ -56,7 +56,7 @@ api.interceptors.response.use(
     if (typeof window === "undefined") return Promise.reject(error);
 
     // Action privilégiée : on demande le mot de passe et on rejoue la requête
-    // une seule fois. Surtout pas de déconnexion ici — la session est valide,
+    // une seule fois. Surtout pas de déconnexion ici : la session est valide,
     // c'est la confirmation qui manquait.
     if (needsPassword(error) && askPassword && error.config && !error.config.headers?.["X-Confirm-Password"]) {
       const password = await askPassword(error.config.url ?? "");

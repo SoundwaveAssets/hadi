@@ -1,6 +1,6 @@
 <#
   Construit l'exécutable Windows autonome de la CLI hadi (PyInstaller), à
-  partir de cli/main.py — n'a besoin ni de Python ni de pip une fois installé sur
+  partir de cli/main.py : n'a besoin ni de Python ni de pip une fois installé sur
   le poste de l'utilisateur final.
 
   L'API (voir orchestrator_api/app/api/routes_cli.py, GET /api/cli/download)
@@ -29,7 +29,7 @@ if ($Clean) {
 }
 
 # PyInstaller n'est qu'un outil de build, jamais une dépendance d'exécution
-# de la CLI elle-même — volontairement absent de requirements.txt.
+# de la CLI elle-même : volontairement absent de requirements.txt.
 pip install --quiet pyinstaller
 
 pyinstaller --onefile --name hadi-windows --console main.py

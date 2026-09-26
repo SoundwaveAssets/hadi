@@ -232,7 +232,7 @@ function Json({ label, value }: { label: string; value: string | null }) {
   return (
     <div>
       <p className="text-xs text-ink-3 uppercase tracking-wide mb-1">{label}</p>
-      <pre className="bg-surface-2 border border-line rounded p-2.5 text-xs font-mono text-ink-2 overflow-x-auto min-h-10 whitespace-pre-wrap break-all">{pretty ?? "—"}</pre>
+      <pre className="bg-surface-2 border border-line rounded p-2.5 text-xs font-mono text-ink-2 overflow-x-auto min-h-10 whitespace-pre-wrap break-all">{pretty ?? "-"}</pre>
     </div>
   );
 }

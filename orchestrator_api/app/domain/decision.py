@@ -46,7 +46,7 @@ class SecurityCriterion(str, Enum):
     Ce qu'on regarde pour dire qu'un commit pose un problème de sécurité.
 
     NEW_CODE (défaut) : les vulnérabilités de la période de code neuf. Le seul
-    critère cohérent avec une décision par commit — un dépôt endetté ne bloque
+    critère cohérent avec une décision par commit : un dépôt endetté ne bloque
     pas les pushs qui réduisent sa dette.
     QUALITY_GATE : le verdict du Quality Gate, donc plus que la sécurité.
     TOTAL : la dette complète, pour qui exige zéro vulnérabilité.
@@ -126,7 +126,7 @@ class Evidence:
         """
         Lit le critère demandé, et lui seul : aucun repli silencieux sur un
         autre. Une donnée absente vaut « non vérifiable », donc alerte
-        (fail-closed), avec un message qui dit quoi corriger — plutôt qu'un
+        (fail-closed), avec un message qui dit quoi corriger : plutôt qu'un
         repli qui rendrait la décision imprévisible et inexplicable en audit.
         """
         if criterion is SecurityCriterion.QUALITY_GATE:

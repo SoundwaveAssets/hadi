@@ -21,7 +21,7 @@ Exemples de comportements inacceptables :
 - l'usage de langage ou d'imagerie sexualisés, et les avances sexuelles ;
 - le trolling, les commentaires insultants ou désobligeants, les attaques personnelles ou politiques ;
 - le harcèlement public ou privé ;
-- la publication d'informations privées d'autrui — adresse physique ou électronique — sans autorisation explicite ;
+- la publication d'informations privées d'autrui, adresse physique ou électronique, sans autorisation explicite ;
 - toute conduite qui pourrait raisonnablement être considérée comme inappropriée dans un cadre professionnel.
 
 ## Responsabilités

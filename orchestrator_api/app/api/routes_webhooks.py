@@ -96,7 +96,7 @@ async def receive_webhook(provider: str, request: Request, db: Session = Depends
     repo_name = forge.repository_name(payload) or "inconnu"
 
     # Le secret dépend du dépôt : il faut l'identifier avant de pouvoir
-    # vérifier la signature. Pas d'entrée d'audit à ce stade — la requête
+    # vérifier la signature. Pas d'entrée d'audit à ce stade : la requête
     # n'est pas authentifiée, et le journal chaîné n'est pas un dépotoir.
     pipeline_config = get_pipeline_config(db, repo_name)
     if not pipeline_config or not pipeline_config.is_active:

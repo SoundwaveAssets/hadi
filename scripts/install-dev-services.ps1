@@ -6,7 +6,7 @@
     - orchestrator-web  -> next dev (port 3001)
 
   Les deux démarrent automatiquement au boot de la machine et redémarrent
-  seuls en cas de crash (arrêt de Docker Desktop, erreur non gérée, etc.) —
+  seuls en cas de crash (arrêt de Docker Desktop, erreur non gérée, etc.) -
   on ne dépend plus d'un process lancé à la main dans un terminal qui meurt
   au premier redémarrage.
 
@@ -19,7 +19,7 @@
 
 $ErrorActionPreference = "Stop"
 
-# Racine du dépôt déduite de l'emplacement du script (scripts/..) — jamais un
+# Racine du dépôt déduite de l'emplacement du script (scripts/..) : jamais un
 # chemin absolu figé : ce script est versionné, il doit rester valable sur
 # n'importe quelle machine où le dépôt est cloné, pas seulement celle où il a
 # été écrit.

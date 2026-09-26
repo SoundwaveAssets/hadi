@@ -94,7 +94,7 @@ def require_password_confirmation(
 
     Une session d'administrateur laissée ouverte suffisait à créer un compte
     de service `admin`, à changer un jeton d'outil ou à réinitialiser le mot
-    de passe d'un tiers — le tout journalisé au nom du titulaire légitime.
+    de passe d'un tiers : le tout journalisé au nom du titulaire légitime.
     Le mot de passe voyage dans un en-tête dédié, jamais dans l'URL ni dans
     le corps : il ne finit ni dans les journaux d'accès ni dans un historique.
 

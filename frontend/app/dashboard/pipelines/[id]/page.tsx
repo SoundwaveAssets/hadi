@@ -70,7 +70,7 @@ const ACTIONABLE_DECISIONS = new Set(["WAITING_HUMAN", "BLOCKED"]);
  *
  * L'action existait dans l'API et dans la CLI, jamais dans l'interface : un
  * développeur bloqué devait ouvrir un terminal pour demander un examen. Elle
- * ne débloque rien par elle-même — deux administrateurs restent nécessaires —,
+ * ne débloque rien par elle-même, deux administrateurs restent nécessaires -,
  * elle fait entrer le pipeline dans la file de décision avec un motif écrit.
  */
 function DerogationRequest({ pipeline, history }: { pipeline: Pipeline; history: AuditEntry[] }) {
@@ -127,8 +127,8 @@ function DerogationRequest({ pipeline, history }: { pipeline: Pipeline; history:
 
 /**
  * Relance l'analyse complète sur le même commit. Pensé pour un échec
- * d'infrastructure — agent Jenkins sans réseau, service externe momentanément
- * injoignable — qui n'a rien à voir avec le code : repousser un commit vide
+ * d'infrastructure : agent Jenkins sans réseau, service externe momentanément
+ * injoignable, qui n'a rien à voir avec le code : repousser un commit vide
  * pour redéclencher une analyse n'est pas une réponse acceptable.
  *
  * Proposé seulement quand il y a quelque chose à relancer : un pipeline en
