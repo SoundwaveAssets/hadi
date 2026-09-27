@@ -87,16 +87,19 @@ Hadi répond à trois questions que les outils, pris séparément, ne posent pas
 
 ## 2. Démarrage
 
-### En une commande
+### Installer
 
 ```bash
-curl -O https://raw.githubusercontent.com/SoundwaveAssets/hadi/main/docker-compose.yml
-docker compose up -d
+git clone https://github.com/SoundwaveAssets/hadi.git && cd hadi
+docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
 ```
 
-Rien à compiler : les images sont publiées sur [GHCR](https://github.com/SoundwaveAssets/hadi/pkgs/container/hadi-api) à chaque version, en `amd64` et `arm64`. Ouvrez **<http://localhost:8088>**.
+Docker construit les deux images et démarre la pile : base PostgreSQL, API, interface. Comptez cinq à quinze minutes la première fois, quelques secondes ensuite. Ouvrez **<http://localhost:8088>**.
 
 Aucun fichier de configuration à créer, aucune base à préparer : chaque réglage a un défaut fonctionnel.
+
+> [!NOTE]
+> **Images pré-construites.** Elles arriveront avec la première release publiée sur [GHCR](https://github.com/SoundwaveAssets/hadi/pkgs/container/hadi-api), en `amd64` et `arm64`. L'installation se réduira alors à `curl -O …/docker-compose.yml && docker compose up -d`, sans rien construire.
 
 ### Ce qui se passe au premier démarrage
 
@@ -123,27 +126,22 @@ flowchart LR
 > L'API répond `503` tant que l'installation n'est pas terminée, et tant que le worker de la file de travail n'est pas vivant. C'est ce que doivent sonder vos `livenessProbe` et vos `healthcheck`.
 
 <details>
-<summary><b>Épingler une version</b></summary>
+<summary><b>Installer sans rien construire, une fois les images publiées</b></summary>
 
-`latest` suit la dernière version publiée. En production, épinglez :
+```bash
+curl -O https://raw.githubusercontent.com/SoundwaveAssets/hadi/main/docker-compose.yml
+docker compose up -d
+```
+
+`docker-compose.yml` ne référence que les images publiées ; les contextes de construction vivent dans `docker-compose.build.yml`. Les deux se superposent, aucun n'est une copie de l'autre.
+
+En production, épinglez la version plutôt que de suivre `latest` :
 
 ```bash
 HADI_VERSION=0.1.0 docker compose up -d
 ```
 
 Les versions disponibles sont listées sur la [page des releases](https://github.com/SoundwaveAssets/hadi/releases).
-
-</details>
-
-<details>
-<summary><b>Construire depuis les sources</b></summary>
-
-```bash
-git clone https://github.com/SoundwaveAssets/hadi.git && cd hadi
-docker compose -f docker-compose.yml -f docker-compose.build.yml up --build
-```
-
-`docker-compose.yml` ne référence que les images publiées ; les contextes de construction vivent dans `docker-compose.build.yml`. Les deux se superposent, aucun n'est une copie de l'autre.
 
 </details>
 
