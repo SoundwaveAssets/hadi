@@ -449,6 +449,20 @@ Hadi ne remplace aucun outil : il les orchestre.
 
 ## 6. Brancher vos outils
 
+> [!IMPORTANT]
+> **Quelle adresse saisir : la vôtre, ou celle que Hadi voit ?**
+>
+> Les URL que vous enregistrez ici sont appelées **par Hadi**, pas par votre navigateur. Si Hadi tourne en conteneur, `http://localhost:8080` désigne le conteneur lui-même, et Jenkins est injoignable, même s'il répond parfaitement dans votre navigateur à cette adresse. La règle vaut pour **Jenkins, SonarQube, Argo CD, la forge et PostgreSQL**.
+>
+> | Où tourne l'outil | Adresse à saisir dans Hadi |
+> |---|---|
+> | Sur la machine hôte, Hadi en conteneur | `http://host.docker.internal:8080` (Docker Desktop), ou l'adresse de la machine. Sous Linux, ajoutez `extra_hosts: ["host.docker.internal:host-gateway"]` au service `api` |
+> | Dans la même pile Docker | Le nom du service, par exemple `http://jenkins:8080` |
+> | Sur un autre serveur | Son URL normale, `https://jenkins.exemple.org` |
+> | Hadi hors conteneur | `http://localhost:8080` convient |
+>
+> La réciproque existe et se règle ailleurs : `ORCHESTRATOR_PUBLIC_URL` est l'adresse à laquelle **vos agents Jenkins** joignent Hadi. Le bouton *Tester* de chaque intégration tranche en une seconde, et distingue « injoignable » de « identifiants refusés ».
+
 ### 6.1 La forge
 
 Enregistrez le dépôt dans **Dépôts suivis**, générez un secret de webhook (bouton *Générer*), puis créez le webhook côté forge vers l'URL correspondante :
@@ -1020,7 +1034,7 @@ Le chien de garde balaie les pipelines figés toutes les dix minutes (tâche pé
 | Symptôme | Cause la plus fréquente | Correctif |
 |---|---|---|
 | L'interface affiche « installation requise » en boucle | L'API répond `503` : worker mort ou installation non terminée | `docker compose logs api`, puis `docker compose restart api` |
-| La connexion à un PostgreSQL existant échoue depuis la pile Docker | `localhost` désigne le conteneur, pas votre machine | `host.docker.internal` sous Docker Desktop ; sous Linux, ajoutez `extra_hosts: ["host.docker.internal:host-gateway"]` au service `api` |
+| Un outil répond dans le navigateur mais Hadi le dit injoignable | L'URL saisie est en `localhost` : depuis un conteneur, elle désigne le conteneur. Vaut pour Jenkins, SonarQube, Argo CD, la forge et PostgreSQL | `host.docker.internal` sous Docker Desktop, le nom du service dans la même pile, ou l'adresse de la machine |
 | La connexion saisie dans l'interface n'a aucun effet | `DB_HOST` vient de l'environnement et l'emporte | Modifiez les variables puis redémarrez. La carte s'affiche alors en lecture seule et le dit |
 | Le webhook renvoie `401` | Secret différent entre la forge et le dépôt suivi | Régénérez le secret et collez-le **à l'identique** dans la forge |
 | Le webhook renvoie `404` | Dépôt non enregistré, ou nom différent de `repository.name` | Enregistrez-le dans *Dépôts suivis* avec le nom exact |
