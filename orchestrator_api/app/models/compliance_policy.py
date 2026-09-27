@@ -41,7 +41,7 @@ class CompliancePolicy(SQLModel, table=True):
         default=None, description="Jours autorisés, ex. '0,1,2,3,4' (0=lundi..6=dimanche). Vide = tous les jours."
     )
     allowed_start_hour: Optional[int] = Field(default=None, description="Heure de début autorisée, 0-23 UTC.")
-    allowed_end_hour: Optional[int] = Field(default=None, description="Heure de fin autorisée, 0-23 UTC.")
+    allowed_end_hour: Optional[int] = Field(default=None, description="Heure de fin autorisée, exclue, 0-23 UTC. Inférieure au début, la fenêtre passe minuit.")
     repository_scope: Optional[str] = Field(
         default=None,
         description="Nom exact d'un pipeline (dépôt) : la fenêtre ne s'applique qu'à lui. Vide = tous les pipelines.",

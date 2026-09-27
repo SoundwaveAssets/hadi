@@ -89,9 +89,11 @@ async def _run_analysis(
                 session.add(pipeline)
                 session.commit()
 
+        # Ce qui est observé est l'étape « Build & Test », pas le job entier :
+        # le dire, sinon le journal affirme plus que ce qui a été constaté.
         append_pipeline_log(
             session, pipeline_id,
-            f"Build Jenkins : {'succès' if build_result.get('success') else 'échec'}.",
+            f"Build Jenkins, étape « Build & Test » : {'succès' if build_result.get('success') else 'échec'}.",
         )
         if scan_result.get("analysis_missing"):
             append_pipeline_log(session, pipeline_id, "Analyse SonarQube : aucune analyse attribuable à ce commit.")

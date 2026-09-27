@@ -351,7 +351,7 @@ Une politique ne peut que **durcir** un verdict (`AUTO_AUTH` devient `WAITING_HU
 
 | Type | Réglages | Effet |
 |---|---|---|
-| **Fenêtre de déploiement** | Jours autorisés (`0`=lundi … `6`=dimanche), heure de début et de fin **en UTC**, portée optionnelle sur un dépôt précis | Hors de la fenêtre, une autorisation automatique redescend en validation humaine |
+| **Fenêtre de déploiement** | Jours autorisés (`0`=lundi … `6`=dimanche), heure de début et de fin **en UTC**, portée optionnelle sur un dépôt précis. **L'heure de fin est exclue** : `8` → `18` couvre 8 h 00 à 17 h 59. Une fin inférieure au début passe minuit : `22` → `6` couvre la nuit | Hors de la fenêtre, une autorisation automatique redescend en validation humaine |
 | **Dépôt sous examen renforcé** | Une sous-chaîne recherchée dans le nom du dépôt | Tout push sur un dépôt correspondant passe systématiquement par un humain |
 
 ### La règle des quatre yeux
