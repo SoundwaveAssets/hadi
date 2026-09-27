@@ -43,8 +43,8 @@ def test_garde_commentaires_et_indentation():
 
 
 def test_registre_avec_port():
-    m = "image: localhost:3000/didier/demo:RELEASE_TAG\n"
-    assert pin_image(m, "demo", "x") == "image: localhost:3000/didier/demo:x\n"
+    m = "image: registre.exemple.org/mon-org/demo:RELEASE_TAG\n"
+    assert pin_image(m, "demo", "x") == "image: registre.exemple.org/mon-org/demo:x\n"
 
 
 def test_digest_remplace_par_le_tag():

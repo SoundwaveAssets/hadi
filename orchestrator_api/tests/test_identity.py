@@ -48,7 +48,7 @@ def test_gitlab_expose_user_username():
 @pytest.mark.parametrize(
     ("mapped", "pusher", "expected_username", "expected_source"),
     [
-        ("didier", "jdupont", "didier", IdentitySource.MAPPED),
+        ("mdurand", "jdupont", "mdurand", IdentitySource.MAPPED),
         (None, "jdupont", "jdupont", IdentitySource.FORGE),
         (None, None, "Jean Dupont", IdentitySource.GIT_AUTHOR),
     ],

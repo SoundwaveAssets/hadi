@@ -15,7 +15,7 @@ def entry(**overrides) -> dict:
     base = {
         "id": 1,
         "timestamp": "2026-09-17T10:00:00+00:00",
-        "developer_username": "didier",
+        "developer_username": "mdurand",
         "repository_name": "orchestrator",
         "commit_hash": "a1b2c3d4",
         "ai_anomaly_score": 0.12,

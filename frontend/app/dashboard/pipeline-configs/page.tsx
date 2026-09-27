@@ -352,7 +352,7 @@ function PipelineFormModal({ existing, onClose }: { existing?: PipelineConfig; o
 
         <Section title="repos.deploymentSection">
           <div className="space-y-3">
-            <Input label={t("repos.gitUrl")} {...register("git_repo_url")} placeholder="http://host.docker.internal:3000/mon-org/mon-projet.git" error={errors.git_repo_url?.message} mono />
+            <Input label={t("repos.gitUrl")} {...register("git_repo_url")} placeholder="https://git.exemple.org/mon-org/mon-projet.git" error={errors.git_repo_url?.message} mono />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Input label={t("repos.branch")} {...register("git_branch")} placeholder="main" mono />
               <Input label={t("repos.manifestPath")} {...register("manifest_path")} placeholder="application.yaml" mono />
