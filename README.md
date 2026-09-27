@@ -128,7 +128,7 @@ flowchart LR
 `latest` suit la dernière version publiée. En production, épinglez :
 
 ```bash
-HADI_VERSION=v0.1.0 docker compose up -d
+HADI_VERSION=0.1.0 docker compose up -d
 ```
 
 Les versions disponibles sont listées sur la [page des releases](https://github.com/SoundwaveAssets/hadi/releases).
@@ -716,7 +716,7 @@ ORCHESTRATOR_REMEMBER_ME_DAYS=0
 # Exploitation
 ORCHESTRATOR_ENABLE_SWAGGER=false
 LOG_FORMAT=json
-HADI_VERSION=v0.1.0
+HADI_VERSION=0.1.0
 ```
 
 </details>
@@ -957,8 +957,8 @@ gunzip -c hadi-2026-01-31.sql.gz | docker compose exec -T db psql -U orchestrato
 ### Mise à jour
 
 ```bash
-HADI_VERSION=v0.2.0 docker compose pull
-HADI_VERSION=v0.2.0 docker compose up -d
+HADI_VERSION=0.2.0 docker compose pull
+HADI_VERSION=0.2.0 docker compose up -d
 ```
 
 Les migrations sont jouées au démarrage de l'API. Sauvegardez avant : une migration s'applique, elle ne se défait pas toute seule.

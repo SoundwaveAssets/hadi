@@ -140,6 +140,15 @@ jobs:
           path: artefacts
           merge-multiple: true
 
+      # Les images portent la version sans le préfixe `v` (docker/metadata-action),
+      # alors que le tag git le porte. Sans ça, les étiquettes annoncées dans la
+      # release ne correspondraient à aucune image publiée.
+      - name: Numéro de version
+        id: version
+        run: echo "number=${TAG#v}" >> "$GITHUB_OUTPUT"
+        env:
+          TAG: ${{ github.ref_name != 'main' && github.ref_name || inputs.version }}
+
       - name: Publier la release
         uses: softprops/action-gh-release@v2
         with:
@@ -156,8 +165,8 @@ jobs:
 
             Images de cette version :
 
-            - `ghcr.io/${{ github.repository_owner }}/hadi-api:${{ github.ref_name }}`
-            - `ghcr.io/${{ github.repository_owner }}/hadi-web:${{ github.ref_name }}`
+            - `ghcr.io/${{ github.repository_owner }}/hadi-api:${{ steps.version.outputs.number }}`
+            - `ghcr.io/${{ github.repository_owner }}/hadi-web:${{ steps.version.outputs.number }}`
 
             Les exécutables de la CLI sont attachés ci-dessous, chacun avec son
             empreinte SHA-256 : comparez-la avant de lancer le fichier.
