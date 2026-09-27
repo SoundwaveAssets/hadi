@@ -46,7 +46,7 @@ help: ## Afficher cette aide
 up: ## Démarrer la pile complète (base + API + interface)
 	docker compose up -d --build --wait
 	@echo ""
-	@echo "  Interface : http://localhost:$${PUBLIC_PORT:-3000}"
+	@echo "  Interface : http://localhost:$${PUBLIC_PORT:-8088}"
 	@echo ""
 
 down: ## Arrêter la pile (les volumes sont conservés)

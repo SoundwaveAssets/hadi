@@ -24,7 +24,7 @@ class Settings(BaseSettings):
 
     # --- Exposition HTTP ---
     cors_allowed_origins: str = Field(
-        default="http://localhost:3000,http://localhost:3001", alias="CORS_ALLOWED_ORIGINS"
+        default="http://localhost:8088", alias="CORS_ALLOWED_ORIGINS"
     )
 
     #: URL de l'Orchestrateur telle qu'un agent Jenkins la voit, injectée dans

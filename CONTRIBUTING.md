@@ -44,7 +44,7 @@ docker compose up
 
 # Ou séparément (rechargement à chaud)
 make dev-api   # API sur :8000
-make dev-web   # Interface sur :3000
+make dev-web   # Interface sur :8088
 ```
 
 ### Variables d'environnement de développement

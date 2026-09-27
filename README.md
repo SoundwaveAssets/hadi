@@ -94,7 +94,7 @@ curl -O https://raw.githubusercontent.com/SoundwaveAssets/hadi/main/docker-compo
 docker compose up -d
 ```
 
-Rien à compiler : les images sont publiées sur [GHCR](https://github.com/SoundwaveAssets/hadi/pkgs/container/hadi-api) à chaque version, en `amd64` et `arm64`. Ouvrez **<http://localhost:3000>**.
+Rien à compiler : les images sont publiées sur [GHCR](https://github.com/SoundwaveAssets/hadi/pkgs/container/hadi-api) à chaque version, en `amd64` et `arm64`. Ouvrez **<http://localhost:8088>**.
 
 Aucun fichier de configuration à créer, aucune base à préparer : chaque réglage a un défaut fonctionnel.
 
@@ -153,7 +153,7 @@ docker compose -f docker-compose.yml -f docker-compose.build.yml up --build
 ```bash
 make install     # dépendances de l'API, de la CLI et de l'interface
 make dev-api     # API sur :8000  (rechargement à chaud)
-make dev-web     # interface sur :3000
+make dev-web     # interface sur :8088
 ```
 
 Prérequis : [Python 3.11 ou 3.12](https://www.python.org/downloads/), [Node 20+](https://nodejs.org/), et un [PostgreSQL](https://www.postgresql.org/download/) joignable. `make help` liste toutes les commandes.
@@ -171,7 +171,7 @@ Un seul port est à exposer : celui de l'interface. Elle relaie `/api` vers l'AP
 server {
     server_name hadi.exemple.org;
     location / {
-        proxy_pass http://127.0.0.1:3000;
+        proxy_pass http://127.0.0.1:8088;
         proxy_set_header Host              $host;
         proxy_set_header X-Real-IP         $remote_addr;
         proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
@@ -182,7 +182,7 @@ server {
 
 ```caddy
 hadi.exemple.org {
-    reverse_proxy 127.0.0.1:3000
+    reverse_proxy 127.0.0.1:8088
 }
 ```
 
@@ -706,7 +706,7 @@ DB_USER=hadi_app
 DB_PASSWORD=...
 
 # Exposition
-PUBLIC_PORT=3000
+PUBLIC_PORT=8088
 ORCHESTRATOR_PUBLIC_URL=https://hadi.exemple.org
 
 # Sessions

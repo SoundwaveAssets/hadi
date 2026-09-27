@@ -94,7 +94,7 @@ services:
       # Cible du relais /api, côté serveur Next. Jamais exposée au navigateur.
       API_PROXY_TARGET: http://api:8000
     ports:
-      - "${PUBLIC_PORT:-3000}:3000"
+      - "${PUBLIC_PORT:-8088}:3000"
 
 volumes:
   db_data:
