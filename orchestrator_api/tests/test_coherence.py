@@ -64,10 +64,17 @@ def test_aucune_route_de_l_api_n_est_injoignable():
     from app.main import app
 
     clients = lire(FRONTEND / "lib", "*.ts") + lire(FRONTEND / "app", "*.tsx") + lire(CLI / "hadi", "*.py")
+    # Les sondes sont appelées par l'infrastructure, pas par un client : on
+    # exige alors qu'elles soient câblées dans le Dockerfile.
+    infrastructure = (RACINE / "Dockerfile").read_text(encoding="utf-8")
     orphelines = []
     for route in app.routes:
         chemin = getattr(route, "path", "")
-        if not chemin.startswith("/api") or chemin == "/api/health":
+        if not chemin.startswith("/api"):
+            continue
+        if chemin.startswith("/api/health"):
+            if chemin != "/api/health" and chemin not in infrastructure:
+                orphelines.append(f"sonde jamais utilisée : {chemin}")
             continue
         fragment = re.sub(r"\{[^}]+\}", "", chemin).rstrip("/").replace("/api", "", 1)
         if fragment and fragment not in clients:

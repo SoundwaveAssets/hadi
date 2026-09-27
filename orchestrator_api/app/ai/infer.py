@@ -59,12 +59,9 @@ def calculate_anomaly_score(metadata: dict, profile: Profile) -> dict:
     model = IsolationForest(n_estimators=100, contamination=0.1, random_state=42)
     model.fit(history_array)
 
-    # decision_function() est centrée sur 0 mais sans échelle fixe (son
-    # amplitude dépend de la dispersion propre de l'historique). Plutôt qu'une
-    # reprojection linéaire à constantes arbitraires, on situe le push actuel
-    # dans la distribution des scores que le modèle attribue à l'historique
-    # lui-même : plus il est bas par rapport à ce que le développeur produit
-    # d'habitude, plus il est anormal. Rang percentile, borné par construction.
+    # decision_function() n'a pas d'échelle fixe. On situe donc le push dans la
+    # distribution des scores de son propre historique : rang percentile, borné
+    # par construction, sans constante arbitraire.
     train_scores = model.decision_function(history_array)
     raw_score = model.decision_function(np.array([features]))[0]
     normal_percentile = float((train_scores <= raw_score).mean())

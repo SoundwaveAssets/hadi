@@ -121,11 +121,8 @@ async def receive_webhook(provider: str, request: Request, db: Session = Depends
         )
         raise HTTPException(status_code=401, detail="Signature du Webhook invalide.")
 
-    # Garde anti-rejeu : on REGARDE ici, on n'acquitte qu'une fois le job
-    # réellement confié à la file (voir plus bas). Acquitter avant, c'était
-    # perdre le push pour de bon si le dépôt du job échouait : la forge
-    # relivrait, Hadi répondrait « déjà traitée », et le pipeline resterait
-    # figé en PENDING sans que personne ne l'apprenne.
+    # Garde anti-rejeu : on regarde ici, on n'acquitte qu'une fois le job confié
+    # à la file. Acquitter avant perdrait le push si le dépôt du job échouait.
     delivery_id = forge.delivery_id(request.headers)
     if delivery_id and db.get(WebhookDelivery, delivery_id):
         return {"message": "Livraison déjà traitée, événement ignoré.", "analysis_triggered": False}
@@ -141,11 +138,9 @@ async def receive_webhook(provider: str, request: Request, db: Session = Depends
     if "[skip ci]" in event.commit_message.lower():
         return {"message": "Commit marqué [skip ci], événement ignoré.", "analysis_triggered": False}
 
-    # Un même commit peut légitimement revenir : "Tester l'envoi" renvoie
-    # toujours le même commit factice, et un vrai push peut être re-livré.
     # Un commit déjà connu pour ce dépôt relance simplement l'analyse.
-    # Qui pousse ? Le compte authentifié par la forge, relié si possible à un
-    # compte Hadi ; le nom d'auteur Git n'est qu'un repli, tracé comme tel.
+    # L'identité vient du compte authentifié par la forge, relié si possible à
+    # un compte Hadi ; le nom d'auteur Git n'est qu'un repli, tracé comme tel.
     identity = identify_pusher(db, provider, event)
 
     pipeline = db.exec(

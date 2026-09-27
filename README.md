@@ -125,7 +125,7 @@ flowchart LR
 | **Première connexion** | `admin` / `admin` | Non : le changement de mot de passe est imposé **côté serveur**, pas seulement dans l'interface |
 
 > [!IMPORTANT]
-> L'API répond `503` tant que l'installation n'est pas terminée, et tant que le worker de la file de travail n'est pas vivant. C'est ce que doivent sonder vos `livenessProbe` et vos `healthcheck`.
+> L'API répond `503` sur `/api/health` tant que l'installation n'est pas terminée. C'est la sonde de disponibilité ; la sonde de vie est `/api/health/live`, qui répond toujours `200`.
 
 <details>
 <summary><b>Installer sans rien construire, une fois les images publiées</b></summary>
@@ -969,21 +969,30 @@ Les migrations sont jouées au démarrage de l'API. Sauvegardez avant : une migr
 
 ### Santé
 
+Deux sondes distinctes, à ne pas confondre.
+
 | Sonde | Réponse |
 |---|---|
+| `GET /api/health/live` | `200` dès que le processus répond, quel que soit l'état de l'installation |
 | `GET /api/health` | `200` si l'installation est terminée **et** le worker de la file vivant |
 | | `503` avec `setup_step` tant que l'assistant n'a pas fini |
 | | `503` avec `queue_worker: false` si le thread de la file est mort |
 
-Un thread de file mort est le cas le plus sournois : l'API répond, l'interface s'affiche, et plus aucun push n'est traité. C'est précisément ce que cette sonde attrape.
+Un thread de file mort est le cas le plus sournois : l'API répond, l'interface s'affiche, et plus aucun push n'est traité. C'est ce que `/api/health` attrape.
 
 ```yaml
 # Kubernetes
 livenessProbe:
-  httpGet: { path: /api/health, port: 8000 }
+  httpGet: { path: /api/health/live, port: 8000 }
   initialDelaySeconds: 30
   periodSeconds: 20
+readinessProbe:
+  httpGet: { path: /api/health, port: 8000 }
+  periodSeconds: 10
 ```
+
+> [!WARNING]
+> Ne branchez pas la `livenessProbe` sur `/api/health` : une instance saine mais pas encore configurée répond `503`, et Kubernetes la redémarrerait en boucle avant que quiconque ait pu terminer l'assistant.
 
 ### Journaux
 

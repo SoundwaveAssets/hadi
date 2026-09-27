@@ -47,7 +47,8 @@ class QueueWorker:
         if "procrastinate_jobs" not in inspect(engine).get_table_names():
             # Première fois : les tables de la file. Les mises à jour de
             # procrastinate passent ensuite par `procrastinate schema --apply`.
-            with queue.replace_connector(PsycopgConnector(conninfo=database_url)):
+            # `open()` est requis : sans pool, apply_schema lève AppNotOpen.
+            with queue.replace_connector(PsycopgConnector(conninfo=database_url)), queue.open():
                 queue.schema_manager.apply_schema()
             logger.info("Tables de la file de travail créées.")
         self._thread = threading.Thread(

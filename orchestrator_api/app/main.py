@@ -112,13 +112,17 @@ app.include_router(routes_pipeline_configs.router, prefix="/api/pipeline-configs
 app.include_router(routes_cli.router, prefix="/api/cli", tags=["CLI"])
 
 
+@app.get("/api/health/live")
+async def liveness():
+    """Sonde de vie : le processus répond. Toujours 200, quel que soit l'état de l'installation."""
+    return {"status": "alive"}
+
+
 @app.get("/api/health")
 async def health_check():
     """
-    Route de vérification de santé pour le Frontend, le CLI et les sondes
-    Kubernetes/Docker. Inclut l'état du worker de la file de travail pour
-    détecter un thread mort silencieusement (l'API répondrait 200 mais aucun
-    job ne serait traité).
+    Sonde de disponibilité : interface, CLI, readinessProbe. Refuse tant que
+    l'installation n'est pas terminée ou que le worker de la file est mort.
     """
     from app.orchestration.queue import worker
 
