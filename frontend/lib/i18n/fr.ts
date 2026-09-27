@@ -192,6 +192,7 @@ export const fr = {
   "settings.thresholds.saved": "Seuils enregistrés.",
   "settings.thresholds.saveError": "Impossible d'enregistrer les seuils.",
   "settings.db.title": "Base de données PostgreSQL",
+  "settings.db.fromEnvironment": "Connexion fournie par les variables d'environnement. Modifiez DB_HOST, DB_PORT, DB_NAME, DB_USER et DB_PASSWORD, puis redémarrez l'instance.",
   "settings.db.host": "Hôte",
   "settings.db.port": "Port",
   "settings.db.name": "Base",

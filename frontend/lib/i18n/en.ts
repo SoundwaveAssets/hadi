@@ -194,6 +194,7 @@ export const en: Record<MessageKey, string> = {
   "settings.thresholds.saved": "Thresholds saved.",
   "settings.thresholds.saveError": "Could not save thresholds.",
   "settings.db.title": "PostgreSQL database",
+  "settings.db.fromEnvironment": "Connection provided by environment variables. Change DB_HOST, DB_PORT, DB_NAME, DB_USER and DB_PASSWORD, then restart the instance.",
   "settings.db.host": "Host",
   "settings.db.port": "Port",
   "settings.db.name": "Database",

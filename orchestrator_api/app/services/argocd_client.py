@@ -123,20 +123,24 @@ class ArgoCDClient:
         self, app_name: str, image_ref: str, timeout_seconds: int = 300, poll_interval_seconds: int = 5
     ) -> bool:
         """
-        Preuve de déploiement : `status.summary.images` liste les images
-        que les ressources vivantes de l'application référencent. Tant que
-        `image_ref` (nom:sha) n'y figure pas, rien ne tourne encore avec ce
-        commit, quoi qu'ait dit la synchronisation. On compare sur la fin de
-        la référence : le manifeste porte le registre en préfixe, pas nous.
+        Preuve de déploiement : l'image doit être référencée par les ressources
+        de l'application ET l'application doit être saine.
+
+        `status.summary.images` seul ne prouve rien : un Deployment dont aucun
+        pod ne démarre (ImagePullBackOff) y fait figurer son image. La santé,
+        calculée par Argo CD à partir des charges de travail, est ce qui
+        distingue « déclaré » de « tourne ».
         """
         app_url = f"{self.api_url}/api/v1/applications/{app_name}"
 
         async with httpx.AsyncClient(follow_redirects=True, verify=context_for(self.api_url), timeout=15.0) as client:
 
             async def probe() -> bool | None:
-                data = await self._get_application(client, app_url)
-                images = (((data or {}).get("status") or {}).get("summary") or {}).get("images") or []
-                return True if any(img == image_ref or img.endswith("/" + image_ref) for img in images) else None
+                status = ((await self._get_application(client, app_url)) or {}).get("status") or {}
+                images = (status.get("summary") or {}).get("images") or []
+                if not any(img == image_ref or img.endswith("/" + image_ref) for img in images):
+                    return None
+                return True if (status.get("health") or {}).get("status") == "Healthy" else None
 
             try:
                 running = await poll_until(probe, timeout=timeout_seconds, interval=poll_interval_seconds)

@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from sqlalchemy import func
 from sqlmodel import Session, select
 
+from app.config import get_settings
 from app.core.crypto import secret_box
 from app.core.database import db_manager, get_session
 from app.core.deps import require_module, require_password_confirmation, require_roles
@@ -251,7 +252,12 @@ class DatabaseSettingsPayload(BaseModel):
 @router.get("/database")
 def get_database_settings(_: User = Depends(require_roles(UserRole.ADMIN))):
     """Paramètres de connexion actifs, jamais le mot de passe."""
-    return db_manager.current_params or {}
+    return {
+        **(db_manager.current_params or {}),
+        # DB_HOST l'emporte sur tout ce qui est enregistré : le dire, plutôt
+        # que d'offrir un formulaire dont la saisie serait ignorée.
+        "from_environment": bool(get_settings().database_url_from_env),
+    }
 
 
 @router.post("/database")
@@ -268,6 +274,11 @@ def update_database_settings(
     instance continue de tourner sur son ancienne connexion, elle n'est
     jamais laissée sans base fonctionnelle.
     """
+    if get_settings().database_url_from_env:
+        raise HTTPException(
+            status_code=409,
+            detail="La connexion vient des variables d'environnement (DB_HOST) : modifiez-les puis redémarrez l'instance.",
+        )
     try:
         db_manager.connect_and_init(
             host=payload.db_host,

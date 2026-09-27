@@ -245,6 +245,20 @@ function DatabaseCard() {
     })
   );
 
+  if (current?.from_environment) {
+    return (
+      <Card>
+        <CardHeader title={t("settings.db.title")} />
+        <div className="p-4 space-y-2 text-[13px]">
+          <p className="text-ink-2">{t("settings.db.fromEnvironment")}</p>
+          <p className="font-mono text-ink-3">
+            {current.user}@{current.host}:{current.port}/{current.dbname}
+          </p>
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader title={t("settings.db.title")} />

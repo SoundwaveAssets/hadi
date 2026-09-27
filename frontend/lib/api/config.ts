@@ -30,6 +30,8 @@ export interface DatabaseSettings {
   port?: number;
   user?: string;
   dbname?: string;
+  /** La connexion vient de DB_HOST : la modifier ici n'aurait aucun effet. */
+  from_environment?: boolean;
 }
 
 export const useDatabaseSettings = () =>
