@@ -103,4 +103,4 @@ async def test_le_chien_de_garde_reprend_les_jobs_orphelins(monkeypatch):
     await watchdog.sweep()
     assert repris, "le chien de garde n'a pas tenté de reprendre les jobs orphelins"
     # Sans seuil, le balayage reprendrait les jobs que ce worker exécute.
-    assert repris[0] == get_settings().pipeline_stall_minutes * 60
+    assert repris[0] == watchdog.ORPHAN_JOB_MINUTES * 60
