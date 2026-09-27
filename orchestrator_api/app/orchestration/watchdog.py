@@ -81,5 +81,12 @@ def sweep_stalled_pipelines(session: Session, *, now: datetime | None = None) ->
 
 async def sweep() -> int:
     """Point d'entrée de la tâche périodique (voir orchestration/jobs.py)."""
+    from app.orchestration.queue import worker
+
+    # Même seuil que les pipelines figés : jamais moins que la durée d'une
+    # analyse légitime, sinon le balayage interromprait le travail en cours.
+    repris = await worker.requeue_stalled_async(older_than_seconds=get_settings().pipeline_stall_minutes * 60)
+    if repris:
+        logger.info("Chien de garde : %s job(s) orphelin(s) remis en file.", repris)
     with Session(db_manager.engine) as session:
         return len(sweep_stalled_pipelines(session))

@@ -74,7 +74,7 @@ class QueueWorker:
         # que le worker vit, c'est-à-dire toute la durée du process.
         with queue.replace_connector(PsycopgConnector(conninfo=database_url)):
             async with queue.open_async():
-                await self._requeue_stalled()
+                await self.requeue_stalled_async()
                 self._ready.set()
                 worker = asyncio.create_task(
                     queue.run_worker_async(concurrency=concurrency, wait=True, install_signal_handlers=False)
@@ -86,13 +86,30 @@ class QueueWorker:
                 except asyncio.CancelledError:
                     pass
 
-    async def _requeue_stalled(self) -> None:
-        """Jobs laissés en cours par un process mort : remis en file, pas perdus."""
-        stalled = list(await queue.job_manager.get_stalled_jobs())
+    async def requeue_stalled_async(self, older_than_seconds: int | None = None) -> int:
+        """
+        Jobs laissés en cours par un process mort : remis en file, pas perdus.
+
+        Au démarrage, aucun job ne nous appartient : le critère du battement de
+        cœur suffit. En marche, il ne suffit plus, car il désigne aussi les
+        jobs que ce worker exécute en ce moment ; `older_than_seconds` évite
+        alors d'interrompre un travail légitimement long.
+        """
+        if older_than_seconds is None:
+            stalled = list(await queue.job_manager.get_stalled_jobs())
+        else:
+            stalled = list(await queue.job_manager.get_stalled_jobs(nb_seconds=older_than_seconds))
         for job in stalled:
             await queue.job_manager.retry_job(job)
         if stalled:
-            logger.warning(f"{len(stalled)} job(s) interrompu(s) par un redémarrage remis en file.")
+            logger.warning(f"{len(stalled)} job(s) interrompu(s) remis en file.")
+        return len(stalled)
+
+    def requeue_stalled(self) -> int:
+        """Reprise depuis un autre thread (chien de garde)."""
+        if self._loop is None or not self._ready.is_set():
+            return 0
+        return self.submit(self.requeue_stalled_async()).result(timeout=30)
 
     def submit(self, coro: Coroutine[Any, Any, Any]) -> concurrent.futures.Future:
         if self._loop is None or not self._ready.is_set():

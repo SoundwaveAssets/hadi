@@ -687,7 +687,7 @@ Tout passe par des variables d'environnement, et tout a un défaut : rien n'est 
 | `ORCHESTRATOR_IDLE_TIMEOUT_MINUTES` | Inactivité au-delà de laquelle l'interface efface la session (`0` = jamais) | `15` |
 | `ORCHESTRATOR_REMEMBER_ME_DAYS` | Durée d'une session ouverte avec « garder la session ouverte » (`0` retire l'option) | `14` |
 | `ORCHESTRATOR_SUDO_MINUTES` | Validité d'une confirmation de mot de passe pour les actions privilégiées | `10` |
-| `ORCHESTRATOR_LOGIN_LOCKOUT_THRESHOLD` · `..._MINUTES` | Verrouillage d'un compte après N échecs, pour M minutes | `5` · `15` |
+| `ORCHESTRATOR_LOGIN_LOCKOUT_THRESHOLD` · `ORCHESTRATOR_LOGIN_LOCKOUT_MINUTES` | Verrouillage d'un compte après N échecs, pour M minutes | `5` · `15` |
 | `ORCHESTRATOR_LOGIN_RATE_LIMIT` | Limite de connexions par adresse IP (format `N/minute`) | `30/minute` |
 | `ORCHESTRATOR_PASSWORD_MIN_LENGTH` | Longueur minimale des mots de passe | `12` |
 
