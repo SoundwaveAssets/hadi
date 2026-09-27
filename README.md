@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="frontend/app/icon.svg" alt="Hadi" width="180">
+
 # Hadi
 
 **Une passerelle de décision entre votre dépôt et votre production.**
