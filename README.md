@@ -1148,7 +1148,9 @@ make lint        # ruff, ESLint, TypeScript
 
 La suite tourne **sans réseau, sans PostgreSQL, sans Jenkins et sans SonarQube** : SQLite en mémoire, dépendances externes remplacées. Elle couvre le fail-closed (une analyse non vérifiable ne passe jamais pour un feu vert), la résistance des journaux à un rescellement sans la clé, l'épinglage du manifeste, la lecture des webhooks des trois forges, et le chemin de déploiement complet.
 
-Onze contrôles de cohérence tournent à chaque exécution et cassent la construction à la première dérive : vocabulaire des statuts identique entre l'API, l'interface et la CLI ; dictionnaires FR/EN alignés ; aucune fonction publique orpheline ; aucune route qu'aucun client n'appelle ; aucune page sans lien de navigation ; aucun hook exporté inutilisé.
+Vingt-huit contrôles de cohérence tournent à chaque exécution et cassent la construction à la première dérive : vocabulaire des statuts identique entre l'API, l'interface et la CLI ; dictionnaires FR/EN alignés ; aucune fonction publique orpheline ; aucune route qu'aucun client n'appelle ; aucune page sans lien de navigation ; aucun hook exporté inutilisé.
+
+Dix-sept d'entre eux gardent **cette documentation** : chaque route, variable d'environnement, statut, module, critère de sécurité et commande de la CLI doit y figurer ; aucun lien ni aucune ancre ne doit être mort ; le port publié doit être le même dans le `docker-compose.yml`, le `Makefile`, la CI, l'interface et ce fichier ; et la version du changelog doit correspondre à celle des trois projets.
 
 La CI vérifie tout cela sur **trois systèmes** (Linux, macOS, Windows) et **deux versions de Python** (3.11, 3.12) : lint, tests avec couverture minimale de 60 %, import réel de l'application, lint et build de l'interface, construction des deux images Docker, démarrage effectif de la pile complète (`docker compose up --wait`), et analyse des dépendances (`pip-audit`, `npm audit`).
 

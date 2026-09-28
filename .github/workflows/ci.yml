@@ -153,8 +153,10 @@ jobs:
       # Aucune préparation : la promesse du README est qu'une machine vierge
       # démarre la pile sans écrire le moindre fichier de configuration.
       # C'est exactement ce que ce job vérifie.
+      # Les deux fichiers, comme la commande d'installation du README :
+      # docker-compose.yml seul ne référence que des images publiées.
       - name: Démarrer
-        run: docker compose up -d --build --wait --wait-timeout 300
+        run: docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build --wait --wait-timeout 600
 
       - name: L'API répond
         # 503 est la réponse attendue tant que l'assistant d'installation n'a
@@ -167,13 +169,19 @@ jobs:
       - name: L'interface répond
         run: curl -fsS http://localhost:8088/ > /dev/null
 
+      # Le schéma appliqué par les migrations doit correspondre aux modèles :
+      # sans ce contrôle, une dérive ne se découvre qu'à la première
+      # installation d'un utilisateur.
+      - name: Le schéma ne dérive pas des modèles
+        run: docker compose -f docker-compose.yml -f docker-compose.build.yml exec -T api python -m alembic check
+
       - name: Journaux en cas d'échec
         if: failure()
-        run: docker compose logs --no-color
+        run: docker compose -f docker-compose.yml -f docker-compose.build.yml logs --no-color
 
       - name: Arrêter
         if: always()
-        run: docker compose down -v
+        run: docker compose -f docker-compose.yml -f docker-compose.build.yml down -v
 
   # ---------------------------------------------------------------------------
   security:

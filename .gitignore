@@ -19,6 +19,7 @@ coverage.xml
 
 # --- Node / Next.js ---
 node_modules/
+*.key
 frontend/.next/
 frontend/.next-*/
 frontend/out/

@@ -22,6 +22,19 @@ if config.config_file_name is not None:
 target_metadata = SQLModel.metadata
 
 
+def include_object(objet, nom, type_, reflechi, comparaison) -> bool:
+    """
+    Écarte les tables de la file de travail, créées et migrées par
+    procrastinate lui-même. Sans ce filtre, une autogénération produit une
+    migration qui les SUPPRIME.
+    """
+    if type_ == "table" and (nom or "").startswith("procrastinate_"):
+        return False
+    if type_ == "index" and getattr(getattr(objet, "table", None), "name", "").startswith("procrastinate_"):
+        return False
+    return True
+
+
 def _database_url() -> str:
     given = config.get_main_option("sqlalchemy.url")
     if given:
@@ -37,7 +50,13 @@ def _database_url() -> str:
 
 
 def run_migrations_offline() -> None:
-    context.configure(url=_database_url(), target_metadata=target_metadata, literal_binds=True, dialect_opts={"paramstyle": "named"})
+    context.configure(
+        url=_database_url(),
+        target_metadata=target_metadata,
+        literal_binds=True,
+        dialect_opts={"paramstyle": "named"},
+        include_object=include_object,
+    )
     with context.begin_transaction():
         context.run_migrations()
 
@@ -47,7 +66,7 @@ def run_migrations_online() -> None:
     section["sqlalchemy.url"] = _database_url()
     connectable = engine_from_config(section, prefix="sqlalchemy.", poolclass=pool.NullPool)
     with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
+        context.configure(connection=connection, target_metadata=target_metadata, include_object=include_object)
         with context.begin_transaction():
             context.run_migrations()
 
