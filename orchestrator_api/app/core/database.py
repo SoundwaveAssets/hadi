@@ -92,7 +92,7 @@ class DatabaseManager:
             if not existing:
                 # Plus d'étape "admin" séparée dans le wizard : le compte est
                 # semé automatiquement par _ensure_default_admin() juste après.
-                session.add(SystemSettings(setup_step="integrations", setup_locked=False))
+                session.add(SystemSettings(setup_step="review", setup_locked=False))
                 session.commit()
 
     def _ensure_default_admin(self) -> None:

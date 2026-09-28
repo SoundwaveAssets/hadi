@@ -19,5 +19,5 @@ class SystemSettings(SQLModel, table=True):
     # Pas d'étape "admin" : le compte admin/admin par défaut est semé
     # automatiquement (voir DatabaseManager._ensure_default_admin), à
     # changer au premier login plutôt qu'à choisir pendant l'installation.
-    setup_step: str = Field(default="integrations", description="integrations | review | done")
+    setup_step: str = Field(default="review", description="review | done")
     setup_locked: bool = Field(default=False)

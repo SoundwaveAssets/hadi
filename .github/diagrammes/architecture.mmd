@@ -1,0 +1,23 @@
+flowchart LR
+    UI["Interface Next.js"]
+    CLI["CLI hadi"]
+    R["Routes FastAPI"]
+    D["domain, règles pures"]
+    S["Services : Jenkins, SonarQube, Argo CD"]
+    P["Providers : Gitea, GitHub, GitLab"]
+    F["Flows : analyse, déploiement"]
+    Q["File de travail procrastinate"]
+    PG[("PostgreSQL")]
+    LD["local_data : clés, ancrage"]
+
+    UI -->|"/api"| R
+    CLI -->|"HTTPS"| R
+    R --> D
+    R --> S
+    S --> P
+    Q --> F
+    F --> D
+    F --> S
+    R --> PG
+    Q --> PG
+    D -.->|"scellement"| LD

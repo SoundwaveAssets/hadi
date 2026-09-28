@@ -1,0 +1,15 @@
+stateDiagram-v2
+    [*] --> PENDING : push reçu
+    PENDING --> BLOCKED : build en échec, ou anomalie + sécurité
+    PENDING --> WAITING_HUMAN : une seule dimension en alerte
+    PENDING --> DEPLOYING : autorisé
+    PENDING --> ANALYSIS_FAILED : outil durablement injoignable
+    WAITING_HUMAN --> DEROGATION_PENDING : 1re validation
+    DEROGATION_PENDING --> DEPLOYING : 2e validation, par une autre personne
+    BLOCKED --> DEROGATION_PENDING : dérogation demandée puis validée
+    DEPLOYING --> DEPLOYED : image observée sur le cluster
+    DEPLOYING --> DEPLOY_FAILED : manifeste, synchronisation ou image
+    DEPLOYED --> [*]
+    DEPLOY_FAILED --> [*]
+    BLOCKED --> [*]
+    ANALYSIS_FAILED --> [*]

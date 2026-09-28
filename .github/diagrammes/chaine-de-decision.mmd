@@ -1,0 +1,28 @@
+sequenceDiagram
+    autonumber
+    participant Dev as Développeur
+    participant Forge as Forge
+    participant Hadi
+    participant Jenkins
+    participant Sonar as SonarQube
+    participant Argo as Argo CD
+    participant K8s as Kubernetes
+
+    Dev->>Forge: git push
+    Forge->>Hadi: webhook signé (HMAC)
+    Hadi->>Hadi: identité du pusher, garde anti-rejeu
+    Hadi->>Jenkins: construire CE commit
+    Jenkins-->>Hadi: résultat du build
+    Hadi->>Sonar: métriques de CE commit
+    Sonar-->>Hadi: vulnérabilités, Quality Gate
+    Hadi->>Hadi: décision + politiques de conformité
+    alt Autorisé
+        Hadi->>Forge: inscrit le SHA dans le manifeste
+        Hadi->>Argo: synchronise cette révision
+        Argo->>K8s: applique
+        Hadi->>Argo: l'image de ce commit tourne-t-elle ?
+        Argo-->>Hadi: image observée
+        Hadi->>Hadi: déploiement scellé dans le journal
+    else En attente ou bloqué
+        Hadi->>Dev: notification, décision scellée
+    end

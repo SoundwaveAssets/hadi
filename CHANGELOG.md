@@ -85,6 +85,8 @@ et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 - **Jetons API déjà révoqués** : la route `POST /api/api-tokens/{id}/revoke` retourne désormais 400 si le jeton est déjà révoqué, au lieu de silencieusement écraser `revoked_at`.
 
 ### Modifié
+- **Assistant d'installation ramené à trois étapes** : prérequis, base de données, récapitulatif. Les intégrations se règlent depuis la page *Intégrations*, où elles restent modifiables et testables, au lieu d'être demandées une fois pour toutes pendant l'installation. Le fil d'étapes devient cliquable et l'étape de la base se passe d'un bouton quand la pile en fournit déjà une.
+- **Diagrammes rendus en images** plutôt qu'en blocs Mermaid : l'application mobile de GitHub n'exécute pas le rendu Mermaid et affichait le code brut. Les sources restent dans `.github/diagrammes/` avec la commande pour les régénérer.
 - **`python_requires`** dans `cli/pyproject.toml` : contraint à `>=3.11,<3.13` pour refléter l'incompatibilité de `numpy==1.26.4` avec Python 3.13.
 - **`LOG_FORMAT`** ajouté dans `docker-compose.yml` avec la valeur par défaut `text`.
 

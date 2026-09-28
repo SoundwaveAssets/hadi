@@ -1,0 +1,7 @@
+flowchart LR
+    G["audit.genesis<br/>ancrage hors base"] --> E1["Entrée n-1<br/>hash"]
+    E1 --> E2["Entrée n<br/>HMAC(contenu + hash n-1)"]
+    E2 --> E3["Entrée n+1"]
+    K["ORCHESTRATOR_AUDIT_KEY"] -. clé .-> E1
+    K -. clé .-> E2
+    K -. clé .-> E3

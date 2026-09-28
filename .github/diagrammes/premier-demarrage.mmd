@@ -1,0 +1,8 @@
+flowchart LR
+    A["docker compose up"] --> B["Clés générées<br/>dans local_data"]
+    B --> C["Migrations Alembic<br/>jouées"]
+    C --> D["Assistant d'installation<br/>jeton exigé"]
+    D --> E["Prérequis"]
+    E --> F["Base de données<br/>peut être passée"]
+    F --> G["Récapitulatif"]
+    G --> H["admin / admin<br/>changement imposé"]

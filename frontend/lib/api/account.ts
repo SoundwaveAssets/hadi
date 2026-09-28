@@ -1,7 +1,6 @@
 /** Compte connecté, assistant d'installation, exports et CLI. */
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { api, download } from "./client";
-import type { TestResult } from "./types";
 
 // --- compte ----------------------------------------------------------------------
 export const updateEmail = (email: string | null) => api.patch("/api/auth/me", { email });
@@ -50,9 +49,5 @@ export const useSetupStatus = () =>
 export const setupDatabase = (payload: { db_host: string; db_port: number; db_name: string; db_user: string; db_password: string }) =>
   api.post("/api/setup/database", payload);
 
-export const setupIntegrations = (payload: Record<string, string | null>) => api.post("/api/setup/integrations", payload);
-
-export const setupTestTool = async (tool: string, url: string) =>
-  (await api.post<TestResult>(`/api/setup/integrations/test/${tool}`, { url })).data;
 
 export const completeSetup = () => api.post("/api/setup/complete");

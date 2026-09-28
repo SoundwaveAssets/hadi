@@ -1,16 +1,11 @@
-import httpx
 from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
 from app.core import setup_token
-from app.core.crypto import secret_box
 from app.core.database import db_manager, get_session
 from app.core.state_manager import app_state_manager
-from app.core.tls import context_for
-from app.models.config import ToolConfig
 from app.models.system import SystemSettings
-from app.services.integrations import describe_connection_error
 
 router = APIRouter()
 
@@ -88,80 +83,6 @@ def configure_database(payload: DatabasePayload):
     return {"status": "success", "next_step": app_state_manager.state.setup_step}
 
 
-# --- Étape 2 : Intégrations ---
-# Pas de secret de webhook ici : chaque dépôt a le sien, saisi à son
-# enregistrement. Le moteur comportemental n'a ni URL ni jeton.
-class IntegrationsPayload(BaseModel):
-    gitea_url: str | None = None
-    gitea_token: str | None = None
-    jenkins_url: str | None = None
-    jenkins_user: str | None = None
-    jenkins_token: str | None = None
-    sonarqube_url: str | None = None
-    sonarqube_token: str | None = None
-    argocd_url: str | None = None
-    argocd_token: str | None = None
-
-
-@router.post("/integrations", dependencies=[Depends(require_setup_token)])
-def configure_integrations(payload: IntegrationsPayload, db: Session = Depends(get_session)):
-    settings = _require_step(db, "integrations")
-
-    config = db.exec(select(ToolConfig).where(ToolConfig.id == 1)).first() or ToolConfig(id=1)
-
-    config.gitea_url = payload.gitea_url
-    config.gitea_token = secret_box.encrypt(payload.gitea_token) if payload.gitea_token else None
-    config.jenkins_url = payload.jenkins_url
-    config.jenkins_user = payload.jenkins_user
-    config.jenkins_token = secret_box.encrypt(payload.jenkins_token)
-    config.sonarqube_url = payload.sonarqube_url
-    config.sonarqube_token = secret_box.encrypt(payload.sonarqube_token)
-    config.argocd_url = payload.argocd_url
-    config.argocd_token = secret_box.encrypt(payload.argocd_token)
-
-    db.add(config)
-    settings.setup_step = "review"
-    db.add(settings)
-    db.commit()
-
-    return {"status": "success", "next_step": "review"}
-
-
-class ConnectionTestPayload(BaseModel):
-    url: str
-
-
-@router.post("/integrations/test/{tool}", dependencies=[Depends(require_setup_token)])
-async def test_integration_connection(tool: str, payload: ConnectionTestPayload):
-    """
-    Ping léger pour rassurer l'admin pendant le wizard (pas une validation
-    d'auth : aucun compte n'existe encore à ce stade pour exiger un jeton).
-
-    Fermé dès que l'installation est verrouillée, sans ce garde-fou, cette
-    route restait un point de sonde HTTP non authentifié exploitable en SSRF
-    indéfiniment après l'installation. Une fois verrouillée, l'équivalent
-    authentifié (avec vérification réelle des identifiants) est
-    POST /api/config/test/{tool}.
-    """
-    if app_state_manager.state.setup_locked:
-        raise HTTPException(
-            status_code=403,
-            detail="Installation déjà verrouillée : utilisez POST /api/config/test/{tool} (authentifié) à la place.",
-        )
-    if tool not in {"gitea", "github", "gitlab", "jenkins", "sonarqube", "argocd"}:
-        raise HTTPException(status_code=400, detail="Outil inconnu.")
-    try:
-        # follow_redirects : certains outils (Argo CD notamment) répondent en
-        # clair sur leur port HTTP mais redirigent vers HTTPS par défaut -
-        # sans ça, on ne reçoit qu'un 307 sans jamais atteindre l'application.
-        async with httpx.AsyncClient(timeout=5.0, follow_redirects=True, verify=context_for(payload.url)) as client:
-            response = await client.get(payload.url)
-        return {"reachable": response.status_code < 500}
-    except Exception as e:
-        return {"reachable": False, "error": describe_connection_error(payload.url, e)}
-
-
-# --- Étape 3 : Récapitulatif et verrouillage ---
 @router.post("/complete", dependencies=[Depends(require_setup_token)])
 def complete_setup(db: Session = Depends(get_session)):
     settings = _require_step(db, "review")

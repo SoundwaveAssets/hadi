@@ -145,24 +145,19 @@ Python 3.13 n'est pas supporté tant que `numpy==1.26.4` ne publie pas de *wheel
 
 ### Ce qui se passe au premier démarrage
 
-```mermaid
-flowchart LR
-    A["docker compose up"] --> B["Clés générées<br/>dans local_data"]
-    B --> C["Migrations Alembic<br/>jouées"]
-    C --> D["Assistant d'installation<br/>jeton exigé"]
-    D --> E["Base de données"]
-    E --> F["Intégrations<br/>optionnel"]
-    F --> G["Récapitulatif"]
-    G --> H["admin / admin<br/>changement imposé"]
-```
+<p align="center">
+  <img src=".github/assets/premier-demarrage.svg" alt="Ce qui se passe au premier démarrage" width="820">
+</p>
 
 | Étape | Ce qu'elle demande | Peut-on la passer ? |
 |---|---|---|
 | **Jeton d'installation** | Le jeton affiché par `docker compose logs api`, ou fixé par `ORCHESTRATOR_SETUP_TOKEN` | Non : il empêche un tiers du réseau d'initialiser l'instance à votre place |
-| **Base de données** | Hôte, port, base, utilisateur, mot de passe | Non, mais la pile Docker les fournit déjà |
-| **Intégrations** | Forge, Jenkins, SonarQube, Argo CD, avec un bouton *Tester* pour chacun | Oui, tout reste modifiable depuis *Intégrations* |
-| **Récapitulatif** | Confirmation | Non |
+| **Prérequis** | Rien : un rappel de ce qu'il faut avoir sous la main | Oui |
+| **Base de données** | Hôte, port, base, utilisateur, mot de passe | **Oui** quand la pile en fournit déjà une : un bouton *Passer cette étape* apparaît |
+| **Récapitulatif** | Confirmation, puis verrouillage | Non |
 | **Première connexion** | `admin` / `admin` | Non : le changement de mot de passe est imposé **côté serveur**, pas seulement dans l'interface |
+
+Le fil d'étapes en haut de l'assistant est cliquable : on revient en arrière ou on passe une étape librement. **Les intégrations ne font pas partie de l'installation** : Jenkins, SonarQube, Argo CD et votre forge se branchent depuis la page *Intégrations*, où ils restent modifiables et testables à tout moment.
 
 > [!IMPORTANT]
 > L'API répond `503` sur `/api/health` tant que l'installation n'est pas terminée. C'est la sonde de disponibilité ; la sonde de vie est `/api/health/live`, qui répond toujours `200`.
@@ -199,36 +194,9 @@ Renseignez ensuite `ORCHESTRATOR_PUBLIC_URL=https://hadi.exemple.org` : c'est l'
 
 ## 3. Comment ça marche
 
-```mermaid
-sequenceDiagram
-    autonumber
-    participant Dev as Développeur
-    participant Forge as Forge
-    participant Hadi
-    participant Jenkins
-    participant Sonar as SonarQube
-    participant Argo as Argo CD
-    participant K8s as Kubernetes
-
-    Dev->>Forge: git push
-    Forge->>Hadi: webhook signé (HMAC)
-    Hadi->>Hadi: identité du pusher, garde anti-rejeu
-    Hadi->>Jenkins: construire CE commit
-    Jenkins-->>Hadi: résultat du build
-    Hadi->>Sonar: métriques de CE commit
-    Sonar-->>Hadi: vulnérabilités, Quality Gate
-    Hadi->>Hadi: décision + politiques de conformité
-    alt Autorisé
-        Hadi->>Forge: inscrit le SHA dans le manifeste
-        Hadi->>Argo: synchronise cette révision
-        Argo->>K8s: applique
-        Hadi->>Argo: l'image de ce commit tourne-t-elle ?
-        Argo-->>Hadi: image observée
-        Hadi->>Hadi: déploiement scellé dans le journal
-    else En attente ou bloqué
-        Hadi->>Dev: notification, décision scellée
-    end
-```
+<p align="center">
+  <img src=".github/assets/chaine-de-decision.svg" alt="De la réception du push au déploiement" width="820">
+</p>
 
 ### Étape par étape
 
@@ -246,23 +214,9 @@ sequenceDiagram
 
 ### Le cycle de vie d'un pipeline
 
-```mermaid
-stateDiagram-v2
-    [*] --> PENDING : push reçu
-    PENDING --> BLOCKED : build en échec, ou anomalie + sécurité
-    PENDING --> WAITING_HUMAN : une seule dimension en alerte
-    PENDING --> DEPLOYING : autorisé
-    PENDING --> ANALYSIS_FAILED : outil durablement injoignable
-    WAITING_HUMAN --> DEROGATION_PENDING : 1re validation
-    DEROGATION_PENDING --> DEPLOYING : 2e validation, par une autre personne
-    BLOCKED --> DEROGATION_PENDING : dérogation demandée puis validée
-    DEPLOYING --> DEPLOYED : image observée sur le cluster
-    DEPLOYING --> DEPLOY_FAILED : manifeste, synchronisation ou image
-    DEPLOYED --> [*]
-    DEPLOY_FAILED --> [*]
-    BLOCKED --> [*]
-    ANALYSIS_FAILED --> [*]
-```
+<p align="center">
+  <img src=".github/assets/cycle-de-vie.svg" alt="Cycle de vie d'un pipeline" width="820">
+</p>
 
 Le vocabulaire est tenu par une énumération unique ([`app/domain/pipeline_status.py`](orchestrator_api/app/domain/pipeline_status.py)), et un test compare à chaque exécution les listes de l'API, de l'interface et de la CLI.
 
@@ -363,11 +317,9 @@ Une politique ne peut que **durcir** un verdict (`AUTO_AUTH` devient `WAITING_HU
 
 Une dérogation exige **deux validations, par deux personnes distinctes** :
 
-```mermaid
-flowchart LR
-    A["Pipeline bloqué<br/>ou en attente"] -->|"1re validation"| B["DEROGATION_PENDING<br/>rien n'est débloqué"]
-    B -->|"2e validation,<br/>autre personne"| C["DEROGATION<br/>déploiement déclenché"]
-```
+<p align="center">
+  <img src=".github/assets/quatre-yeux.svg" alt="La règle des quatre yeux" width="820">
+</p>
 
 Aucune entrée n'est modifiée : chaque étape est une **nouvelle** entrée d'audit qui référence celle qu'elle remplace. `approved_by` porte le premier validateur, `four_eyes_approved_by` le second. Un jeton de service se voit refuser l'action : une session et un jeton du même administrateur ne font pas quatre yeux.
 
@@ -908,15 +860,9 @@ HADI_TOKEN=$ORCH_TOKEN hadi gate mon-depot "$COMMIT_HASH" --wait 300
 
 Chaque entrée porte un **HMAC-SHA256** ([RFC 2104](https://www.rfc-editor.org/rfc/rfc2104)) calculé sur son contenu **et** sur le condensat de l'entrée précédente. La clé vit hors de la base qu'elle protège (`ORCHESTRATOR_AUDIT_KEY`, idéalement dans un coffre). Réécrire une ligne par un accès direct à la base casse la chaîne, et la vérification le signale.
 
-```mermaid
-flowchart LR
-    G["audit.genesis<br/>ancrage hors base"] --> E1["Entrée n-1<br/>hash"]
-    E1 --> E2["Entrée n<br/>HMAC(contenu + hash n-1)"]
-    E2 --> E3["Entrée n+1"]
-    K["ORCHESTRATOR_AUDIT_KEY"] -. clé .-> E1
-    K -. clé .-> E2
-    K -. clé .-> E3
-```
+<p align="center">
+  <img src=".github/assets/chaine-scellee.svg" alt="Chaînage du journal d'audit" width="820">
+</p>
 
 - **Journal des décisions** : chaque verdict, ses preuves, le critère appliqué, la provenance de l'identité, et l'issue du déploiement.
 - **Journal des actions d'administration** : comptes, rôles, intégrations, modules, politiques, connexions réussies et échouées, verrouillages. Les secrets n'y figurent jamais : seulement le fait qu'ils ont été (re)définis.
@@ -1082,31 +1028,9 @@ La commande rejoue les deux chaînes et signale la première entrée dont le sce
 
 ## 16. Architecture du code
 
-```mermaid
-flowchart LR
-    UI["Interface Next.js"]
-    CLI["CLI hadi"]
-    R["Routes FastAPI"]
-    D["domain, règles pures"]
-    S["Services : Jenkins, SonarQube, Argo CD"]
-    P["Providers : Gitea, GitHub, GitLab"]
-    F["Flows : analyse, déploiement"]
-    Q["File de travail procrastinate"]
-    PG[("PostgreSQL")]
-    LD["local_data : clés, ancrage"]
-
-    UI -->|"/api"| R
-    CLI -->|"HTTPS"| R
-    R --> D
-    R --> S
-    S --> P
-    Q --> F
-    F --> D
-    F --> S
-    R --> PG
-    Q --> PG
-    D -.->|"scellement"| LD
-```
+<p align="center">
+  <img src=".github/assets/architecture.svg" alt="Architecture du code" width="820">
+</p>
 
 ```
 orchestrator/
@@ -1286,6 +1210,18 @@ Consultez [`CONTRIBUTING.md`](CONTRIBUTING.md) pour le guide complet, et [`CODE_
 ## Signaler une vulnérabilité
 
 Consultez [`SECURITY.md`](SECURITY.md). **N'ouvrez pas d'issue publique** pour une faille de sécurité.
+
+## Les diagrammes
+
+Ils sont rendus en images plutôt qu'en blocs Mermaid, pour rester lisibles partout, y compris dans l'application mobile de GitHub qui n'exécute pas le rendu Mermaid.
+
+Les sources vivent dans [`.github/diagrammes/`](.github/diagrammes/). Pour les régénérer après modification :
+
+```bash
+npx @mermaid-js/mermaid-cli -i .github/diagrammes/architecture.mmd   -o .github/assets/architecture.svg -c .github/diagrammes/config.json -b white
+```
+
+Le fond blanc et `htmlLabels: false` ne sont pas décoratifs : GitHub supprime les `foreignObject` des SVG, ce qui effacerait le texte, et un fond transparent rendrait les libellés sombres invisibles sur le thème sombre.
 
 ## Outils de développement
 

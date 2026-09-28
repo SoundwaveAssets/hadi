@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useForm, useWatch, type UseFormRegister } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, ChevronRight, Database, KeyRound, Loader2, Server, ShieldCheck, Wrench, XCircle } from "lucide-react";
-import { completeSetup, SETUP_TOKEN_STORAGE_KEY, setupDatabase, setupIntegrations, setupTestTool, useSetupStatus } from "@/lib/api";
+import { CheckCircle2, ChevronRight, Database, KeyRound, Loader2, Server, ShieldCheck, Wrench } from "lucide-react";
+import { completeSetup, SETUP_TOKEN_STORAGE_KEY, setupDatabase, useSetupStatus } from "@/lib/api";
 import { useT, type MessageKey } from "@/lib/i18n";
 import { extractError } from "@/lib/errors";
 import { HadiLogo } from "@/components/HadiLogo";
@@ -16,12 +16,11 @@ import { Input } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 
-type StepId = "prerequisites" | "database" | "integrations" | "review";
+type StepId = "prerequisites" | "database" | "review";
 
 const STEPS: { id: StepId; label: MessageKey }[] = [
   { id: "prerequisites", label: "setup.step.prerequisites" },
   { id: "database", label: "setup.step.database" },
-  { id: "integrations", label: "setup.step.integrations" },
   { id: "review", label: "setup.step.review" },
 ];
 
@@ -29,11 +28,11 @@ export default function SetupPage() {
   const t = useT();
   const router = useRouter();
   const { data: status, isLoading } = useSetupStatus();
-  // Tant que l'utilisateur n'a pas avancé lui-même, on reprend l'assistant là
-  // où l'installation en était, jamais de zéro à chaque rechargement.
+  // L'assistant commence par les prérequis, y compris quand la pile fournit
+  // déjà une base : sauter d'emblée au récapitulatif priverait l'administrateur
+  // de ce qu'il doit avoir sous la main.
   const [chosen, setStep] = useState<StepId | null>(null);
-  const resumed: StepId = status?.db_connected && status.setup_step !== "database" ? (status.setup_step as StepId) : "prerequisites";
-  const step = chosen ?? resumed;
+  const step = chosen ?? "prerequisites";
 
   useEffect(() => {
     if (status?.setup_locked) router.push("/login");
@@ -56,12 +55,11 @@ export default function SetupPage() {
           <p className="text-ink-2 text-sm mt-2">{t("setup.title")}</p>
         </div>
 
-        <Stepper current={step} />
+        <Stepper current={step} onSelect={setStep} />
 
         <div className="bg-surface rounded-md shadow-sm border border-line p-8 mt-6">
           {step === "prerequisites" && <PrerequisitesStep onNext={() => setStep("database")} />}
-          {step === "database" && <DatabaseStep onNext={() => setStep("integrations")} />}
-          {step === "integrations" && <IntegrationsStep onNext={() => setStep("review")} />}
+          {step === "database" && <DatabaseStep onNext={() => setStep("review")} dejaConnectee={status?.db_connected ?? false} />}
           {step === "review" && <ReviewStep onDone={() => router.push("/login")} />}
         </div>
       </div>
@@ -69,7 +67,7 @@ export default function SetupPage() {
   );
 }
 
-function Stepper({ current }: { current: StepId }) {
+function Stepper({ current, onSelect }: { current: StepId; onSelect: (id: StepId) => void }) {
   const t = useT();
   const currentIndex = STEPS.findIndex((s) => s.id === current);
   return (
@@ -79,7 +77,7 @@ function Stepper({ current }: { current: StepId }) {
         const isActive = i === currentIndex;
         return (
           <div key={s.id} className="flex items-center flex-1 last:flex-none">
-            <div className="flex flex-col items-center gap-1.5">
+            <button type="button" onClick={() => onSelect(s.id)} className="flex flex-col items-center gap-1.5 cursor-pointer" aria-current={isActive}>
               <div
                 className={cn(
                   "w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold border-2 transition-colors",
@@ -89,7 +87,7 @@ function Stepper({ current }: { current: StepId }) {
                 {isDone ? <CheckCircle2 className="w-4 h-4" /> : i + 1}
               </div>
               <span className={cn("text-xs font-medium", isActive ? "text-accent" : "text-ink-3")}>{t(s.label)}</span>
-            </div>
+            </button>
             {i < STEPS.length - 1 && <div className={cn("h-0.5 flex-1 mx-2", isDone ? "bg-accent" : "bg-line")} />}
           </div>
         );
@@ -152,7 +150,7 @@ const databaseSchema = z.object({
   db_password: z.string().min(1),
 });
 
-function DatabaseStep({ onNext }: { onNext: () => void }) {
+function DatabaseStep({ onNext, dejaConnectee }: { onNext: () => void; dejaConnectee: boolean }) {
   const t = useT();
   const form = useForm<z.infer<typeof databaseSchema>>({
     resolver: zodResolver(databaseSchema),
@@ -174,96 +172,19 @@ function DatabaseStep({ onNext }: { onNext: () => void }) {
         <Input label={t("common.password")} icon={KeyRound} type="password" {...form.register("db_password")} error={errors.db_password?.message} required />
       </div>
       <Button type="submit" isLoading={connect.isPending} className="w-full">{t("setup.testContinue")} <ChevronRight className="w-4 h-4" /></Button>
+      {dejaConnectee && (
+        <>
+          <p className="text-[12.5px] text-ink-3 mt-4 text-center">{t("setup.dbAlready")}</p>
+          <Button type="button" variant="ghost" onClick={onNext} className="w-full mt-2">
+            {t("setup.skip")} <ChevronRight className="w-4 h-4" />
+          </Button>
+        </>
+      )}
     </form>
   );
 }
 
 // --- Étape 2 : intégrations ---
-type SetupTool = "gitea" | "jenkins" | "sonarqube" | "argocd";
-const SETUP_TOOLS: { key: SetupTool; name: string; hasUser?: boolean }[] = [
-  { key: "gitea", name: "Gitea" },
-  { key: "jenkins", name: "Jenkins", hasUser: true },
-  { key: "sonarqube", name: "SonarQube" },
-  { key: "argocd", name: "Argo CD" },
-];
-
-const integrationsSchema = z.object({
-  gitea_url: z.string().trim(),
-  gitea_token: z.string(),
-  jenkins_url: z.string().trim(),
-  jenkins_user: z.string().trim(),
-  jenkins_token: z.string(),
-  sonarqube_url: z.string().trim(),
-  sonarqube_token: z.string(),
-  argocd_url: z.string().trim(),
-  argocd_token: z.string(),
-});
-type IntegrationsForm = z.infer<typeof integrationsSchema>;
-
-function IntegrationsStep({ onNext }: { onNext: () => void }) {
-  const t = useT();
-  const form = useForm<IntegrationsForm>({
-    resolver: zodResolver(integrationsSchema),
-    defaultValues: { gitea_url: "", gitea_token: "", jenkins_url: "", jenkins_user: "", jenkins_token: "", sonarqube_url: "", sonarqube_token: "", argocd_url: "", argocd_token: "" },
-  });
-  const urls = useWatch({ control: form.control });
-  const save = useMutation({
-    // Champ vide = outil non configuré : null, jamais une chaîne vide.
-    mutationFn: (values: IntegrationsForm) => setupIntegrations(Object.fromEntries(Object.entries(values).map(([k, v]) => [k, v || null]))),
-    onSuccess: onNext,
-    onError: (err) => toast.error(extractError(err, t("setup.integrationsError"))),
-  });
-
-  return (
-    <form onSubmit={form.handleSubmit((values) => save.mutate(values))}>
-      <StepHeader icon={KeyRound} title={t("setup.integrationsTitle")} description={t("setup.integrationsHint")} />
-      <div className="space-y-3">
-        {SETUP_TOOLS.map((tool) => (
-          <div key={tool.key} className="border border-line rounded-md p-4">
-            <p className="text-sm font-semibold text-ink-2 mb-3">{tool.name}</p>
-            <div className="space-y-2">
-              <UrlWithTest tool={tool.key} url={urls[`${tool.key}_url`] ?? ""} register={form.register} />
-              {tool.hasUser ? (
-                <div className="grid grid-cols-2 gap-3">
-                  <Input {...form.register("jenkins_user")} placeholder={t("common.user")} />
-                  <Input type="password" {...form.register("jenkins_token")} placeholder={t("integrations.secret.token")} />
-                </div>
-              ) : (
-                <Input type="password" {...form.register(`${tool.key}_token`)} placeholder={t("integrations.secret.token")} />
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-      <Button type="submit" isLoading={save.isPending} className="w-full mt-6">{t("setup.saveContinue")} <ChevronRight className="w-4 h-4" /></Button>
-    </form>
-  );
-}
-
-function UrlWithTest({ tool, url, register }: { tool: SetupTool; url: string; register: UseFormRegister<IntegrationsForm> }) {
-  const t = useT();
-  const test = useMutation({ mutationFn: () => setupTestTool(tool, url) });
-  const reachable = test.isError ? false : test.data?.reachable;
-
-  return (
-    <div className="flex gap-2 items-start">
-      <div className="flex-1">
-        <Input {...register(`${tool}_url`)} placeholder="https://..." mono />
-      </div>
-      <button
-        type="button"
-        onClick={() => test.mutate()}
-        disabled={!url || test.isPending}
-        className="px-3 py-2.5 rounded-md border border-line text-sm text-ink-2 hover:bg-surface-2 disabled:opacity-50 flex items-center gap-1.5 whitespace-nowrap"
-      >
-        {test.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-        {reachable === true && <CheckCircle2 className="w-3.5 h-3.5 text-good" />}
-        {reachable === false && <XCircle className="w-3.5 h-3.5 text-critical" />}
-        {t("common.test")}
-      </button>
-    </div>
-  );
-}
 
 // --- Étape 3 : récapitulatif et verrouillage ---
 function ReviewStep({ onDone }: { onDone: () => void }) {

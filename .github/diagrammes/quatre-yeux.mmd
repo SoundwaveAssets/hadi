@@ -1,0 +1,3 @@
+flowchart LR
+    A["Pipeline bloqué<br/>ou en attente"] -->|"1re validation"| B["DEROGATION_PENDING<br/>rien n'est débloqué"]
+    B -->|"2e validation,<br/>autre personne"| C["DEROGATION<br/>déploiement déclenché"]
