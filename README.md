@@ -91,17 +91,53 @@ Hadi répond à trois questions que les outils, pris séparément, ne posent pas
 
 ### Installer
 
+Trois façons d'installer Hadi. La première convient à la quasi-totalité des cas.
+
+| | Pour qui | Ce qu'il faut | Durée |
+|---|---|---|---|
+| **A. Docker, depuis les sources** | Le cas général | Docker seul | 5 à 15 min |
+| **B. Docker, images publiées** | Qui veut le raccourci | Docker seul | 1 à 2 min |
+| **C. Sans Docker** | Qui veut tout piloter à la main | Python, Node, PostgreSQL | 10 à 20 min |
+
+#### A. Docker, depuis les sources
+
 ```bash
 git clone https://github.com/SoundwaveAssets/hadi.git && cd hadi
 docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
 ```
 
-Docker construit les deux images et démarre la pile : base PostgreSQL, API, interface. Comptez cinq à quinze minutes la première fois, quelques secondes ensuite. Ouvrez **<http://localhost:8088>**.
+Docker construit les deux images et démarre la pile : base PostgreSQL, API, interface. Ouvrez **<http://localhost:8088>**.
 
 Aucun fichier de configuration à créer, aucune base à préparer : chaque réglage a un défaut fonctionnel.
 
+#### B. Docker, images publiées
+
+```bash
+curl -O https://raw.githubusercontent.com/SoundwaveAssets/hadi/main/docker-compose.yml
+docker compose up -d
+```
+
+Rien à construire : `docker-compose.yml` ne référence que les images publiées, les contextes de construction vivent dans `docker-compose.build.yml`. En production, épinglez la version plutôt que de suivre `latest` :
+
+```bash
+HADI_VERSION=0.1.0 docker compose up -d
+```
+
 > [!NOTE]
-> **Images pré-construites.** Elles arriveront avec la première release publiée sur [GHCR](https://github.com/SoundwaveAssets/hadi/pkgs/container/hadi-api), en `amd64` et `arm64`. L'installation se réduira alors à `curl -O …/docker-compose.yml && docker compose up -d`, sans rien construire.
+> **Cette voie n'est pas encore disponible.** Les images arriveront sur [GHCR](https://github.com/SoundwaveAssets/hadi/pkgs/container/hadi-api) avec la première release, en `amd64` et `arm64`. D'ici là, utilisez la voie A. Les versions publiées sont listées sur la [page des releases](https://github.com/SoundwaveAssets/hadi/releases).
+
+#### C. Sans Docker
+
+```bash
+git clone https://github.com/SoundwaveAssets/hadi.git && cd hadi
+make install     # dépendances de l'API, de la CLI et de l'interface
+make dev-api     # API sur :8000
+make dev-web     # interface sur :8088
+```
+
+Prérequis : [Python 3.11 ou 3.12](https://www.python.org/downloads/), [Node 20+](https://nodejs.org/), et un [PostgreSQL](https://www.postgresql.org/download/) joignable. `make help` liste toutes les commandes.
+
+Python 3.13 n'est pas supporté tant que `numpy==1.26.4` ne publie pas de *wheel* `cp313` : la compilation depuis les sources échoue. La contrainte est écrite dans `cli/pyproject.toml`.
 
 ### Ce qui se passe au premier démarrage
 
@@ -126,41 +162,6 @@ flowchart LR
 
 > [!IMPORTANT]
 > L'API répond `503` sur `/api/health` tant que l'installation n'est pas terminée. C'est la sonde de disponibilité ; la sonde de vie est `/api/health/live`, qui répond toujours `200`.
-
-<details>
-<summary><b>Installer sans rien construire, une fois les images publiées</b></summary>
-
-```bash
-curl -O https://raw.githubusercontent.com/SoundwaveAssets/hadi/main/docker-compose.yml
-docker compose up -d
-```
-
-`docker-compose.yml` ne référence que les images publiées ; les contextes de construction vivent dans `docker-compose.build.yml`. Les deux se superposent, aucun n'est une copie de l'autre.
-
-En production, épinglez la version plutôt que de suivre `latest` :
-
-```bash
-HADI_VERSION=0.1.0 docker compose up -d
-```
-
-Les versions disponibles sont listées sur la [page des releases](https://github.com/SoundwaveAssets/hadi/releases).
-
-</details>
-
-<details>
-<summary><b>Sans Docker</b></summary>
-
-```bash
-make install     # dépendances de l'API, de la CLI et de l'interface
-make dev-api     # API sur :8000  (rechargement à chaud)
-make dev-web     # interface sur :8088
-```
-
-Prérequis : [Python 3.11 ou 3.12](https://www.python.org/downloads/), [Node 20+](https://nodejs.org/), et un [PostgreSQL](https://www.postgresql.org/download/) joignable. `make help` liste toutes les commandes.
-
-Python 3.13 n'est pas supporté tant que `numpy==1.26.4` ne publie pas de *wheel* `cp313` : la compilation depuis les sources échoue. La contrainte est écrite dans `cli/pyproject.toml`.
-
-</details>
 
 <details>
 <summary><b>Derrière un reverse proxy</b></summary>
