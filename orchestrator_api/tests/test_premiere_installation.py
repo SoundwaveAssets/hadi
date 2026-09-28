@@ -49,3 +49,41 @@ def test_les_tables_de_la_file_se_creent_sur_une_base_vierge():
 @pytest.mark.parametrize("route", ["/api/health/live", "/api/health"])
 def test_les_deux_sondes_existent(client: TestClient, route: str):
     assert client.get(route).status_code in (200, 503)
+
+
+def test_une_base_choisie_dans_l_interface_l_emporte_sur_l_environnement(tmp_path, monkeypatch):
+    """
+    Sans cette priorité, le formulaire enregistre une connexion que le
+    démarrage ignore : c'est ce qui le rendait sans effet sous Docker.
+    """
+    import json
+
+    from app.core import database as module
+
+    fichier = tmp_path / "db_bootstrap.json"
+    monkeypatch.setattr(module, "BOOTSTRAP_FILE", fichier)
+    from app.core.crypto import secret_box
+
+    fichier.write_text(json.dumps({
+        "host": "distante", "port": 5432, "user": "u",
+        "password": secret_box.encrypt("p"), "dbname": "d", "chosen_by_admin": True,
+    }), encoding="utf-8")
+
+    monkeypatch.setenv("DB_HOST", "interne")
+    from app.config import get_settings
+
+    get_settings.cache_clear()
+    try:
+        assert "distante" in module.resolve_database_url()
+        assert module.database_chosen_by_admin() is True
+
+        # Sans la marque, l'environnement reprend la main.
+        fichier.write_text(json.dumps({
+            "host": "distante", "port": 5432, "user": "u",
+            "password": secret_box.encrypt("p"), "dbname": "d",
+        }), encoding="utf-8")
+        assert "interne" in module.resolve_database_url()
+        assert module.database_chosen_by_admin() is False
+    finally:
+        monkeypatch.delenv("DB_HOST", raising=False)
+        get_settings.cache_clear()

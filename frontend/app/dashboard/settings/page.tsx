@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { Save } from "lucide-react";
-import { SECURITY_CRITERIA, useAnomalyScores, useDatabaseSettings, useSaveConfig, useSaveDatabase, useToolConfig, type SecurityCriterion } from "@/lib/api";
+import { SECURITY_CRITERIA, useAnomalyScores, useDatabaseSettings, useRevertDatabase, useSaveConfig, useSaveDatabase, useToolConfig, type SecurityCriterion } from "@/lib/api";
 import { extractError } from "@/lib/errors";
 import { useT, type MessageKey } from "@/lib/i18n";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -232,6 +232,7 @@ function DatabaseCard() {
   const t = useT();
   const { data: current } = useDatabaseSettings();
   const save = useSaveDatabase();
+  const revert = useRevertDatabase();
   const form = useForm<DatabaseForm>({
     resolver: zodResolver(databaseSchema),
     values: { db_host: current?.host ?? "", db_port: current?.port ?? 5432, db_name: current?.dbname ?? "", db_user: current?.user ?? "", db_password: "" },
@@ -244,20 +245,6 @@ function DatabaseCard() {
       onError: (err) => toast.error(extractError(err, t("settings.db.saveError"))),
     })
   );
-
-  if (current?.from_environment) {
-    return (
-      <Card>
-        <CardHeader title={t("settings.db.title")} />
-        <div className="p-4 space-y-2 text-[13px]">
-          <p className="text-ink-2">{t("settings.db.fromEnvironment")}</p>
-          <p className="font-mono text-ink-3">
-            {current.user}@{current.host}:{current.port}/{current.dbname}
-          </p>
-        </div>
-      </Card>
-    );
-  }
 
   return (
     <Card>
@@ -272,7 +259,28 @@ function DatabaseCard() {
           <Input label={t("settings.db.user")} {...form.register("db_user")} error={errors.db_user?.message} mono required />
           <Input label={t("settings.db.password")} type="password" {...form.register("db_password")} error={errors.db_password?.message} required />
         </div>
-        <Button type="submit" size="sm" variant="secondary" icon={Save} isLoading={save.isPending}>{t("settings.db.submit")}</Button>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button type="submit" size="sm" variant="secondary" icon={Save} isLoading={save.isPending}>{t("settings.db.submit")}</Button>
+          {current?.chosen_by_admin && current?.environment_available && (
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              isLoading={revert.isPending}
+              onClick={() =>
+                revert.mutate(undefined, {
+                  onSuccess: () => toast.success(t("settings.db.reverted")),
+                  onError: (err) => toast.error(extractError(err, t("settings.db.revertError"))),
+                })
+              }
+            >
+              {t("settings.db.revert")}
+            </Button>
+          )}
+        </div>
+        <p className="text-[12px] text-ink-3">
+          {current?.chosen_by_admin ? t("settings.db.sourceChosen") : t("settings.db.sourceEnvironment")}
+        </p>
       </form>
     </Card>
   );

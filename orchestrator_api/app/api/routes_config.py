@@ -252,11 +252,15 @@ class DatabaseSettingsPayload(BaseModel):
 @router.get("/database")
 def get_database_settings(_: User = Depends(require_roles(UserRole.ADMIN))):
     """Paramètres de connexion actifs, jamais le mot de passe."""
+    from app.core.database import database_chosen_by_admin
+
+    choisie = database_chosen_by_admin()
     return {
         **(db_manager.current_params or {}),
-        # DB_HOST l'emporte sur tout ce qui est enregistré : le dire, plutôt
-        # que d'offrir un formulaire dont la saisie serait ignorée.
-        "from_environment": bool(get_settings().database_url_from_env),
+        #: Une base distante a été choisie ici, et elle l'emporte sur l'environnement.
+        "chosen_by_admin": choisie,
+        #: L'environnement propose une base : on peut donc y revenir.
+        "environment_available": bool(get_settings().database_url_from_env),
     }
 
 
@@ -274,11 +278,6 @@ def update_database_settings(
     instance continue de tourner sur son ancienne connexion, elle n'est
     jamais laissée sans base fonctionnelle.
     """
-    if get_settings().database_url_from_env:
-        raise HTTPException(
-            status_code=409,
-            detail="La connexion vient des variables d'environnement (DB_HOST) : modifiez-les puis redémarrez l'instance.",
-        )
     try:
         db_manager.connect_and_init(
             host=payload.db_host,
@@ -286,6 +285,7 @@ def update_database_settings(
             user=payload.db_user,
             password=payload.db_password,
             dbname=payload.db_name,
+            chosen_by_admin=True,
         )
     except Exception as e:
         raise HTTPException(
@@ -299,6 +299,48 @@ def update_database_settings(
             after=payload.model_dump(exclude={"db_password"}), request=request,
         )
     return {"status": "success", "message": "Connexion à la base de données mise à jour."}
+
+
+@router.delete("/database")
+def revert_database_settings(
+    request: Request,
+    user: User = Depends(require_roles(UserRole.ADMIN)),
+    _: User = Depends(require_password_confirmation),
+):
+    """
+    Revient à la base fournie par l'environnement, celle de la pile. Le
+    fichier local est retiré, la connexion rouverte immédiatement : une
+    instance ne reste jamais sans base le temps d'un redémarrage.
+    """
+    from app.core.database import BOOTSTRAP_FILE
+
+    settings = get_settings()
+    if not settings.database_url_from_env:
+        raise HTTPException(
+            status_code=409,
+            detail="Aucune base fournie par l'environnement : renseignez DB_HOST pour pouvoir y revenir.",
+        )
+
+    ancien = BOOTSTRAP_FILE.read_bytes() if BOOTSTRAP_FILE.exists() else None
+    BOOTSTRAP_FILE.unlink(missing_ok=True)
+    try:
+        db_manager.engine = None
+        db_manager.connect_and_init(
+            host=settings.db_host,
+            port=settings.db_port,
+            user=settings.db_user,
+            password=settings.db_password,
+            dbname=settings.db_name,
+            persist=False,
+        )
+    except Exception as e:
+        if ancien is not None:
+            BOOTSTRAP_FILE.write_bytes(ancien)
+        raise HTTPException(status_code=400, detail="La base de l'environnement est injoignable : rien n'a été changé.") from e
+
+    with Session(db_manager.engine) as db:
+        admin_audit.record(db, user, "database.revert", target_type="database", request=request)
+    return {"status": "success", "message": "Connexion revenue à la base de l'environnement."}
 
 
 class ToolTestPayload(BaseModel):

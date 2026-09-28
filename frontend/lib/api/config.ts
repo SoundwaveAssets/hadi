@@ -30,8 +30,10 @@ export interface DatabaseSettings {
   port?: number;
   user?: string;
   dbname?: string;
-  /** La connexion vient de DB_HOST : la modifier ici n'aurait aucun effet. */
-  from_environment?: boolean;
+  /** Une base distante a été choisie ici : elle l'emporte sur l'environnement. */
+  chosen_by_admin?: boolean;
+  /** L'environnement propose une base : on peut y revenir. */
+  environment_available?: boolean;
 }
 
 export const useDatabaseSettings = () =>
@@ -70,6 +72,8 @@ export const testTool = async (tool: ToolKey, payload: ToolCredentials) =>
 
 export const useSaveDatabase = () =>
   useConfigMutation((payload: { db_host: string; db_port: number; db_name: string; db_user: string; db_password: string }) => api.post(`${base}/database`, payload));
+
+export const useRevertDatabase = () => useConfigMutation(() => api.delete(`${base}/database`));
 
 const FORGES: readonly string[] = ["gitea", "github", "gitlab"];
 export const isForge = (tool: string): tool is Forge => FORGES.includes(tool);

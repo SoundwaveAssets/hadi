@@ -21,11 +21,15 @@ class DatabaseManager:
         self.current_params: dict | None = None
         self.current_url: str | None = None
 
-    def connect_and_init(self, host, port, user, password, dbname, persist: bool = True) -> None:
+    def connect_and_init(self, host, port, user, password, dbname, persist: bool = True, chosen_by_admin: bool = False) -> None:
         """
         Se connecte à PostgreSQL, applique les migrations, et (si `persist`)
         sauvegarde la configuration localement de façon chiffrée pour les
         redémarrages ultérieurs de cette instance.
+
+        `chosen_by_admin` marque une base choisie depuis l'interface : elle
+        l'emporte alors sur les variables d'environnement, sans quoi le
+        formulaire enregistrerait un réglage que le démarrage ignorerait.
         """
         from app.core.crypto import secret_box  # import tardif : évite un cycle au chargement du module
 
@@ -52,6 +56,7 @@ class DatabaseManager:
                 "user": user,
                 "password": secret_box.encrypt(password),
                 "dbname": dbname,
+                "chosen_by_admin": chosen_by_admin,
             }
             with open(BOOTSTRAP_FILE, "w") as f:
                 json.dump(config_data, f)
@@ -144,6 +149,9 @@ class DatabaseManager:
         if self.engine is not None:
             return True
 
+        if self._connect_from_bootstrap(admin_only=True):
+            return True
+
         settings = get_settings()
         if settings.db_host:
             try:
@@ -160,39 +168,60 @@ class DatabaseManager:
                 logger.warning(f"Échec de connexion via variables d'environnement DB_*: {e}")
                 return False
 
-        if BOOTSTRAP_FILE.exists():
-            from app.core.crypto import secret_box
+        return self._connect_from_bootstrap(admin_only=False)
 
-            try:
-                with open(BOOTSTRAP_FILE) as f:
-                    data = json.load(f)
-                self.connect_and_init(
-                    data["host"],
-                    data["port"],
-                    data["user"],
-                    secret_box.decrypt(data["password"]),
-                    data["dbname"],
-                    persist=False,
-                )
-                return True
-            except Exception as e:
-                logger.warning(f"Erreur de reconnexion auto depuis le bootstrap local: {e}")
+    def _connect_from_bootstrap(self, *, admin_only: bool) -> bool:
+        """Reconnecte depuis le fichier local ; `admin_only` ne retient qu'une base choisie depuis l'interface."""
+        if not BOOTSTRAP_FILE.exists():
+            return False
+        from app.core.crypto import secret_box
+
+        try:
+            with open(BOOTSTRAP_FILE) as f:
+                data = json.load(f)
+            if admin_only and not data.get("chosen_by_admin"):
                 return False
+            self.connect_and_init(
+                data["host"],
+                data["port"],
+                data["user"],
+                secret_box.decrypt(data["password"]),
+                data["dbname"],
+                persist=False,
+            )
+            return True
+        except Exception as e:
+            logger.warning(f"Erreur de reconnexion auto depuis le bootstrap local: {e}")
+            return False
 
-        return False
+
+def _bootstrap_url(*, admin_only: bool) -> str | None:
+    if not BOOTSTRAP_FILE.exists():
+        return None
+    from app.core.crypto import secret_box
+
+    data = json.loads(BOOTSTRAP_FILE.read_text(encoding="utf-8"))
+    if admin_only and not data.get("chosen_by_admin"):
+        return None
+    return f"postgresql://{data['user']}:{secret_box.decrypt(data['password'])}@{data['host']}:{data['port']}/{data['dbname']}"
+
+
+def database_chosen_by_admin() -> bool:
+    """Une base a-t-elle été choisie depuis l'interface plutôt que fournie par l'environnement ?"""
+    return _bootstrap_url(admin_only=True) is not None
 
 
 def resolve_database_url() -> str | None:
-    """URL PostgreSQL telle que load_existing_config la construirait, sans ouvrir de connexion (usage : alembic/env.py)."""
-    settings = get_settings()
-    if settings.database_url_from_env:
-        return settings.database_url_from_env
-    if BOOTSTRAP_FILE.exists():
-        from app.core.crypto import secret_box
-
-        data = json.loads(BOOTSTRAP_FILE.read_text(encoding="utf-8"))
-        return f"postgresql://{data['user']}:{secret_box.decrypt(data['password'])}@{data['host']}:{data['port']}/{data['dbname']}"
-    return None
+    """
+    Même priorité que load_existing_config, sans ouvrir de connexion
+    (usage : alembic/env.py, file de travail) : le choix explicite d'un
+    administrateur l'emporte, sinon l'environnement, sinon le fichier local.
+    """
+    return (
+        _bootstrap_url(admin_only=True)
+        or get_settings().database_url_from_env
+        or _bootstrap_url(admin_only=False)
+    )
 
 
 # Instance globale

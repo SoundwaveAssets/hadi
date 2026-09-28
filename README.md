@@ -673,8 +673,18 @@ Tout passe par des variables d'environnement, et tout a un défaut : rien n'est 
 
 > [!IMPORTANT]
 > **Pour pointer un PostgreSQL déjà installé sur la machine hôte**, l'hôte n'est pas `localhost` : à l'intérieur d'un conteneur, `localhost` désigne le conteneur lui-même. Utilisez `host.docker.internal` (Docker Desktop), ou l'adresse de la machine. Sous Linux, ajoutez `extra_hosts: ["host.docker.internal:host-gateway"]` au service `api`.
->
-> Ces variables **l'emportent toujours** sur ce qui est saisi dans l'interface : quand elles sont définies, la carte de connexion s'affiche en lecture seule.
+
+### Base interne ou base distante
+
+Hadi accepte les deux, et l'administrateur tranche depuis *Configuration*.
+
+| Situation | Base utilisée |
+|---|---|
+| Rien n'a été saisi dans l'interface | Celle des variables d'environnement, donc la base de la pile Docker |
+| Une connexion a été enregistrée dans *Configuration* | **Celle-là**, y compris sous Docker : un choix explicite l'emporte sur l'environnement |
+| Retour souhaité | Le bouton *Revenir à la base de la pile* supprime le choix et rouvre la connexion d'origine |
+
+La bascule est immédiate : la nouvelle connexion est testée, les migrations y sont appliquées, et l'instance n'est jamais laissée sans base. Le mot de passe est chiffré dans `local_data`, jamais renvoyé par l'API.
 | `ORCHESTRATOR_MASTER_KEY` | Chiffrement des secrets stockés | générée |
 | `ORCHESTRATOR_JWT_SECRET` | Signature des jetons de session | générée |
 | `ORCHESTRATOR_AUDIT_KEY` | Scellement HMAC des journaux | générée |
@@ -1040,7 +1050,7 @@ Le chien de garde balaie les pipelines figés toutes les dix minutes (tâche pé
 |---|---|---|
 | L'interface affiche « installation requise » en boucle | L'API répond `503` : worker mort ou installation non terminée | `docker compose logs api`, puis `docker compose restart api` |
 | Un outil répond dans le navigateur mais Hadi le dit injoignable | L'URL saisie est en `localhost` : depuis un conteneur, elle désigne le conteneur. Vaut pour Jenkins, SonarQube, Argo CD, la forge et PostgreSQL | `host.docker.internal` sous Docker Desktop, le nom du service dans la même pile, ou l'adresse de la machine |
-| La connexion saisie dans l'interface n'a aucun effet | `DB_HOST` vient de l'environnement et l'emporte | Modifiez les variables puis redémarrez. La carte s'affiche alors en lecture seule et le dit |
+| L'instance ne repart pas sur la base attendue après redémarrage | Une base a été choisie dans *Configuration* : elle l'emporte sur l'environnement | *Configuration* → *Revenir à la base de la pile*, ou vérifiez la ligne affichée sous le formulaire, qui indique la source en vigueur |
 | Le webhook renvoie `401` | Secret différent entre la forge et le dépôt suivi | Régénérez le secret et collez-le **à l'identique** dans la forge |
 | Le webhook renvoie `404` | Dépôt non enregistré, ou nom différent de `repository.name` | Enregistrez-le dans *Dépôts suivis* avec le nom exact |
 | Tous les pushs partent en validation humaine | Métrique `new_vulnerabilities` absente | Définissez une période de code neuf sur le projet SonarQube, ou changez de critère |
