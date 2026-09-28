@@ -102,3 +102,10 @@ def test_la_version_du_changelog_existe_dans_les_projets():
     version = re.search(r"^## \[(\d+\.\d+\.\d+)\]", changelog, re.M).group(1)
     for fichier in ("cli/pyproject.toml", "frontend/package.json", "cli/hadi/__init__.py"):
         assert version in (RACINE / fichier).read_text(encoding="utf-8"), f"{fichier} n'est pas en version {version}"
+
+
+def test_aucune_version_inventee_dans_la_documentation():
+    """Une version citée en exemple doit exister : sinon la commande échoue chez le lecteur."""
+    publiees = set(re.findall(r"^## \[(\d+\.\d+\.\d+)\]", (RACINE / "CHANGELOG.md").read_text(encoding="utf-8"), re.M))
+    citees = set(re.findall(r"HADI_VERSION=(\d[\w.]*)", README))
+    assert citees <= publiees, f"versions citées mais jamais publiées : {sorted(citees - publiees)}"

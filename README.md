@@ -940,10 +940,14 @@ gunzip -c hadi-2026-01-31.sql.gz | docker compose exec -T db psql -U orchestrato
 
 ### Mise à jour
 
+Relevez le numéro voulu sur la [page des releases](https://github.com/SoundwaveAssets/hadi/releases), puis :
+
 ```bash
-HADI_VERSION=0.2.0 docker compose pull
-HADI_VERSION=0.2.0 docker compose up -d
+HADI_VERSION=<version> docker compose pull
+HADI_VERSION=<version> docker compose up -d
 ```
+
+Sans `HADI_VERSION`, la pile suit `latest`, et un simple `docker compose pull` récupère la dernière version publiée.
 
 Les migrations sont jouées au démarrage de l'API. Sauvegardez avant : une migration s'applique, elle ne se défait pas toute seule.
 
