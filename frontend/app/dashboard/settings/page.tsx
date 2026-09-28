@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -233,6 +234,12 @@ function DatabaseCard() {
   const { data: current } = useDatabaseSettings();
   const save = useSaveDatabase();
   const revert = useRevertDatabase();
+  // Sans base fournie par l'environnement, il n'y a rien vers quoi revenir :
+  // le formulaire est alors le seul moyen de connecter l'instance.
+  const bascule = current?.environment_available ?? false;
+  const [distante, setDistante] = useState(false);
+  const ouvert = !bascule || distante || (current?.chosen_by_admin ?? false);
+
   const form = useForm<DatabaseForm>({
     resolver: zodResolver(databaseSchema),
     values: { db_host: current?.host ?? "", db_port: current?.port ?? 5432, db_name: current?.dbname ?? "", db_user: current?.user ?? "", db_password: "" },
@@ -246,42 +253,50 @@ function DatabaseCard() {
     })
   );
 
+  const basculer = () => {
+    if (!ouvert) {
+      setDistante(true);
+      return;
+    }
+    setDistante(false);
+    if (current?.chosen_by_admin) {
+      revert.mutate(undefined, {
+        onSuccess: () => toast.success(t("settings.db.reverted")),
+        onError: (err) => { setDistante(true); toast.error(extractError(err, t("settings.db.revertError"))); },
+      });
+    }
+  };
+
   return (
     <Card>
       <CardHeader title={t("settings.db.title")} />
-      <form onSubmit={submit} className="p-4 space-y-3">
-        <div className="grid grid-cols-[1fr_9ch] gap-3">
-          <Input label={t("settings.db.host")} {...form.register("db_host")} error={errors.db_host?.message} mono required />
-          <Input label={t("settings.db.port")} type="number" {...form.register("db_port", { valueAsNumber: true })} error={errors.db_port?.message} mono required />
+      {bascule && (
+        <div className="p-4 flex items-center justify-between gap-4 border-b border-line">
+          <span className="text-[13px] text-ink-2">{t("settings.db.remote")}</span>
+          <Switch checked={ouvert} onChange={basculer} disabled={revert.isPending} label={t("settings.db.remote")} />
         </div>
-        <Input label={t("settings.db.name")} {...form.register("db_name")} error={errors.db_name?.message} mono required />
-        <div className="grid grid-cols-2 gap-3">
-          <Input label={t("settings.db.user")} {...form.register("db_user")} error={errors.db_user?.message} mono required />
-          <Input label={t("settings.db.password")} type="password" {...form.register("db_password")} error={errors.db_password?.message} required />
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
+      )}
+
+      {ouvert ? (
+        <form onSubmit={submit} className="p-4 space-y-3">
+          <div className="grid grid-cols-[1fr_9ch] gap-3">
+            <Input label={t("settings.db.host")} {...form.register("db_host")} error={errors.db_host?.message} mono required />
+            <Input label={t("settings.db.port")} type="number" {...form.register("db_port", { valueAsNumber: true })} error={errors.db_port?.message} mono required />
+          </div>
+          <Input label={t("settings.db.name")} {...form.register("db_name")} error={errors.db_name?.message} mono required />
+          <div className="grid grid-cols-2 gap-3">
+            <Input label={t("settings.db.user")} {...form.register("db_user")} error={errors.db_user?.message} mono required />
+            <Input label={t("settings.db.password")} type="password" {...form.register("db_password")} error={errors.db_password?.message} required />
+          </div>
           <Button type="submit" size="sm" variant="secondary" icon={Save} isLoading={save.isPending}>{t("settings.db.submit")}</Button>
-          {current?.chosen_by_admin && current?.environment_available && (
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              isLoading={revert.isPending}
-              onClick={() =>
-                revert.mutate(undefined, {
-                  onSuccess: () => toast.success(t("settings.db.reverted")),
-                  onError: (err) => toast.error(extractError(err, t("settings.db.revertError"))),
-                })
-              }
-            >
-              {t("settings.db.revert")}
-            </Button>
-          )}
+        </form>
+      ) : (
+        <div className="p-4">
+          <p className="font-mono text-[12.5px] text-ink-3">
+            {current?.user}@{current?.host}:{current?.port}/{current?.dbname}
+          </p>
         </div>
-        <p className="text-[12px] text-ink-3">
-          {current?.chosen_by_admin ? t("settings.db.sourceChosen") : t("settings.db.sourceEnvironment")}
-        </p>
-      </form>
+      )}
     </Card>
   );
 }

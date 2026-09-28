@@ -678,11 +678,15 @@ Tout passe par des variables d'environnement, et tout a un défaut : rien n'est 
 
 Hadi accepte les deux, et l'administrateur tranche depuis *Configuration*.
 
-| Situation | Base utilisée |
+Un interrupteur **Utiliser une base de données distante** commande le choix.
+
+| Interrupteur | Base utilisée |
 |---|---|
-| Rien n'a été saisi dans l'interface | Celle des variables d'environnement, donc la base de la pile Docker |
-| Une connexion a été enregistrée dans *Configuration* | **Celle-là**, y compris sous Docker : un choix explicite l'emporte sur l'environnement |
-| Retour souhaité | Le bouton *Revenir à la base de la pile* supprime le choix et rouvre la connexion d'origine |
+| Éteint, l'état par défaut | Celle de la pile, fournie par les variables d'environnement. La connexion active est affichée, sans formulaire |
+| Allumé | Le formulaire apparaît ; la connexion enregistrée **l'emporte sur l'environnement**, y compris sous Docker |
+| Éteint à nouveau | Le choix est supprimé et l'instance revient à la base de la pile |
+
+Sans base fournie par l'environnement, par exemple une installation sans Docker, l'interrupteur n'apparaît pas : le formulaire est alors le seul moyen de connecter l'instance.
 
 La bascule est immédiate : la nouvelle connexion est testée, les migrations y sont appliquées, et l'instance n'est jamais laissée sans base. Le mot de passe est chiffré dans `local_data`, jamais renvoyé par l'API.
 | `ORCHESTRATOR_MASTER_KEY` | Chiffrement des secrets stockés | générée |
