@@ -453,8 +453,6 @@ export const en: Record<MessageKey, string> = {
   "setup.start": "Start",
   "setup.dbError": "Could not connect to PostgreSQL.",
   "setup.dbTitle": "PostgreSQL",
-  "setup.skip": "Skip this step",
-  "setup.dbAlready": "A database is already provided by the environment variables.",
   "setup.testContinue": "Test and continue",
   "setup.completeError": "Could not complete setup.",
   "setup.defaultAdmin": "Administrator account",
@@ -476,7 +474,7 @@ export const en: Record<MessageKey, string> = {
   "users.resetTitle": "Reset password for {name}",
   "overview.ofWhichBlocked": "including {n} blocked",
   "setup.req.postgres": "A reachable PostgreSQL server.",
-  "setup.req.tools": "Jenkins, SonarQube and Argo CD URLs, if available.",
+  "setup.req.tools": "Your tools are connected after installation, from the Integrations page.",
   "setup.req.locked": "Once locked, setup cannot be rerun.",
 
   "overview.awaiting": "{n} pipeline(s) awaiting a decision",
@@ -507,6 +505,7 @@ export const en: Record<MessageKey, string> = {
   "pipeline.confirmedBy": "Confirmed by {name} (four eyes)",
 
   "setup.token": "Setup token (API logs)",
+  "setup.tokenStale": "Installation token refused: it probably comes from a previous instance. Use the one printed in the API logs.",
 
   // Journal des actions d'administration
   "audit.decisions": "Decisions",

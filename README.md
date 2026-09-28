@@ -153,11 +153,14 @@ Python 3.13 n'est pas supporté tant que `numpy==1.26.4` ne publie pas de *wheel
 |---|---|---|
 | **Jeton d'installation** | Le jeton affiché par `docker compose logs api`, ou fixé par `ORCHESTRATOR_SETUP_TOKEN` | Non : il empêche un tiers du réseau d'initialiser l'instance à votre place |
 | **Prérequis** | Rien : un rappel de ce qu'il faut avoir sous la main | Oui |
-| **Base de données** | Hôte, port, base, utilisateur, mot de passe | **Oui** quand la pile en fournit déjà une : un bouton *Passer cette étape* apparaît |
+| **Base de données** | Hôte, port, base, utilisateur, mot de passe | **Oui** : la pile en fournit déjà une, cliquez sur *Récapitulatif* dans le fil d'étapes |
 | **Récapitulatif** | Confirmation, puis verrouillage | Non |
 | **Première connexion** | `admin` / `admin` | Non : le changement de mot de passe est imposé **côté serveur**, pas seulement dans l'interface |
 
-Le fil d'étapes en haut de l'assistant est cliquable : on revient en arrière ou on passe une étape librement. **Les intégrations ne font pas partie de l'installation** : Jenkins, SonarQube, Argo CD et votre forge se branchent depuis la page *Intégrations*, où ils restent modifiables et testables à tout moment.
+Le fil d'étapes en haut de l'assistant est cliquable : on revient en arrière ou on passe une étape librement.
+
+> [!TIP]
+> **Quel hôte saisir pour la base ?** Depuis un conteneur, `localhost` désigne le conteneur lui-même. Pour la base de la pile, saisissez **`db`** ; pour un PostgreSQL installé sur la machine, **`host.docker.internal`**. **Les intégrations ne font pas partie de l'installation** : Jenkins, SonarQube, Argo CD et votre forge se branchent depuis la page *Intégrations*, où ils restent modifiables et testables à tout moment.
 
 > [!IMPORTANT]
 > L'API répond `503` sur `/api/health` tant que l'installation n'est pas terminée. C'est la sonde de disponibilité ; la sonde de vie est `/api/health/live`, qui répond toujours `200`.

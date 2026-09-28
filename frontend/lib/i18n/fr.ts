@@ -451,8 +451,6 @@ export const fr = {
   "setup.start": "Commencer",
   "setup.dbError": "Connexion à PostgreSQL impossible.",
   "setup.dbTitle": "PostgreSQL",
-  "setup.skip": "Passer cette étape",
-  "setup.dbAlready": "Une base est déjà fournie par les variables d'environnement.",
   "setup.testContinue": "Tester et continuer",
   "setup.completeError": "Impossible de finaliser l'installation.",
   "setup.defaultAdmin": "Compte administrateur",
@@ -474,7 +472,7 @@ export const fr = {
   "users.resetTitle": "Réinitialiser le mot de passe de {name}",
   "overview.ofWhichBlocked": "dont {n} bloqué(s)",
   "setup.req.postgres": "Un serveur PostgreSQL accessible.",
-  "setup.req.tools": "Les URL de Jenkins, SonarQube et Argo CD, si disponibles.",
+  "setup.req.tools": "Vos outils se branchent après l'installation, depuis la page Intégrations.",
   "setup.req.locked": "Une fois verrouillée, l'installation ne se relance pas.",
 
   "overview.awaiting": "{n} pipeline(s) en attente d'une décision",
@@ -505,6 +503,7 @@ export const fr = {
   "pipeline.confirmedBy": "Confirmé par {name} (quatre yeux)",
 
   "setup.token": "Jeton d'installation (journaux de l'API)",
+  "setup.tokenStale": "Jeton d'installation refusé : il vient probablement d'une instance précédente. Reprenez celui affiché par les journaux de l'API.",
 
   // Journal des actions d'administration
   "audit.decisions": "Décisions",

@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
+import axios from "axios";
 import { z } from "zod";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -59,7 +60,7 @@ export default function SetupPage() {
 
         <div className="bg-surface rounded-md shadow-sm border border-line p-8 mt-6">
           {step === "prerequisites" && <PrerequisitesStep onNext={() => setStep("database")} />}
-          {step === "database" && <DatabaseStep onNext={() => setStep("review")} dejaConnectee={status?.db_connected ?? false} />}
+          {step === "database" && <DatabaseStep onNext={() => setStep("review")} onTokenExpired={() => setStep("prerequisites")} />}
           {step === "review" && <ReviewStep onDone={() => router.push("/login")} />}
         </div>
       </div>
@@ -70,28 +71,44 @@ export default function SetupPage() {
 function Stepper({ current, onSelect }: { current: StepId; onSelect: (id: StepId) => void }) {
   const t = useT();
   const currentIndex = STEPS.findIndex((s) => s.id === current);
+
+  // Pastilles et libellés sur deux rangées : le trait de liaison est ainsi
+  // centré sur les pastilles, jamais sur l'ensemble pastille + texte.
   return (
-    <div className="flex items-center justify-between px-2">
-      {STEPS.map((s, i) => {
-        const isDone = i < currentIndex;
-        const isActive = i === currentIndex;
-        return (
-          <div key={s.id} className="flex items-center flex-1 last:flex-none">
-            <button type="button" onClick={() => onSelect(s.id)} className="flex flex-col items-center gap-1.5 cursor-pointer" aria-current={isActive}>
-              <div
+    <div className="px-2">
+      <div className="flex items-center">
+        {STEPS.map((s, i) => {
+          const isDone = i < currentIndex;
+          const isActive = i === currentIndex;
+          return (
+            <Fragment key={s.id}>
+              <button
+                type="button"
+                onClick={() => onSelect(s.id)}
+                aria-current={isActive}
+                aria-label={t(s.label)}
                 className={cn(
-                  "w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold border-2 transition-colors",
+                  "w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-sm font-semibold border-2 transition-colors cursor-pointer",
                   isDone ? "bg-accent-solid border-accent-solid text-white" : isActive ? "border-accent text-accent bg-surface" : "border-line text-ink-3 bg-surface"
                 )}
               >
                 {isDone ? <CheckCircle2 className="w-4 h-4" /> : i + 1}
-              </div>
-              <span className={cn("text-xs font-medium", isActive ? "text-accent" : "text-ink-3")}>{t(s.label)}</span>
-            </button>
-            {i < STEPS.length - 1 && <div className={cn("h-0.5 flex-1 mx-2", isDone ? "bg-accent" : "bg-line")} />}
-          </div>
-        );
-      })}
+              </button>
+              {i < STEPS.length - 1 && <div className={cn("h-0.5 flex-1 mx-2", isDone ? "bg-accent" : "bg-line")} />}
+            </Fragment>
+          );
+        })}
+      </div>
+      <div className="flex justify-between mt-1.5">
+        {STEPS.map((s, i) => (
+          <span
+            key={s.id}
+            className={cn("text-xs font-medium", i === currentIndex ? "text-accent" : "text-ink-3")}
+          >
+            {t(s.label)}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
@@ -150,14 +167,29 @@ const databaseSchema = z.object({
   db_password: z.string().min(1),
 });
 
-function DatabaseStep({ onNext, dejaConnectee }: { onNext: () => void; dejaConnectee: boolean }) {
+function DatabaseStep({ onNext, onTokenExpired }: { onNext: () => void; onTokenExpired: () => void }) {
   const t = useT();
   const form = useForm<z.infer<typeof databaseSchema>>({
     resolver: zodResolver(databaseSchema),
     defaultValues: { db_host: "localhost", db_port: 5432, db_name: "orchestrator_db", db_user: "postgres", db_password: "" },
   });
   const { errors } = form.formState;
-  const connect = useMutation({ mutationFn: setupDatabase, onSuccess: onNext, onError: (err) => toast.error(extractError(err, t("setup.dbError"))) });
+  const connect = useMutation({
+    mutationFn: setupDatabase,
+    onSuccess: onNext,
+    onError: (err) => {
+      // 401 : ce n'est pas la base qui refuse, c'est le jeton d'installation.
+      // Un jeton conservé d'une instance précédente donnerait sinon une erreur
+      // de connexion trompeuse à chaque étape.
+      if (axios.isAxiosError(err) && err.response?.status === 401) {
+        window.sessionStorage.removeItem(SETUP_TOKEN_STORAGE_KEY);
+        toast.error(t("setup.tokenStale"));
+        onTokenExpired();
+        return;
+      }
+      toast.error(extractError(err, t("setup.dbError")));
+    },
+  });
 
   return (
     <form onSubmit={form.handleSubmit((values) => connect.mutate(values))}>
@@ -172,14 +204,6 @@ function DatabaseStep({ onNext, dejaConnectee }: { onNext: () => void; dejaConne
         <Input label={t("common.password")} icon={KeyRound} type="password" {...form.register("db_password")} error={errors.db_password?.message} required />
       </div>
       <Button type="submit" isLoading={connect.isPending} className="w-full">{t("setup.testContinue")} <ChevronRight className="w-4 h-4" /></Button>
-      {dejaConnectee && (
-        <>
-          <p className="text-[12.5px] text-ink-3 mt-4 text-center">{t("setup.dbAlready")}</p>
-          <Button type="button" variant="ghost" onClick={onNext} className="w-full mt-2">
-            {t("setup.skip")} <ChevronRight className="w-4 h-4" />
-          </Button>
-        </>
-      )}
     </form>
   );
 }
@@ -189,7 +213,19 @@ function DatabaseStep({ onNext, dejaConnectee }: { onNext: () => void; dejaConne
 // --- Étape 3 : récapitulatif et verrouillage ---
 function ReviewStep({ onDone }: { onDone: () => void }) {
   const t = useT();
-  const complete = useMutation({ mutationFn: completeSetup, onSuccess: onDone, onError: (err) => toast.error(extractError(err, t("setup.completeError"))) });
+  const complete = useMutation({
+    mutationFn: completeSetup,
+    onSuccess: onDone,
+    // Une installation déjà verrouillée n'est pas une erreur à afficher : le
+    // verrou a été posé, il n'y a plus qu'à emmener la personne à la connexion.
+    onError: (err) => {
+      if (axios.isAxiosError(err) && err.response?.status === 409) {
+        onDone();
+        return;
+      }
+      toast.error(extractError(err, t("setup.completeError")));
+    },
+  });
 
   return (
     <div>
@@ -205,7 +241,7 @@ function ReviewStep({ onDone }: { onDone: () => void }) {
         <p className="text-sm text-warning">{t("setup.nextStepHint")}</p>
       </div>
       <p className="text-sm text-ink-3 mb-6">{t("setup.lockWarning")}</p>
-      <Button onClick={() => complete.mutate()} isLoading={complete.isPending} variant="dark" icon={ShieldCheck} className="w-full">{t("setup.lock")}</Button>
+      <Button onClick={() => complete.mutate()} isLoading={complete.isPending} disabled={complete.isPending || complete.isSuccess} variant="dark" icon={ShieldCheck} className="w-full">{t("setup.lock")}</Button>
     </div>
   );
 }
