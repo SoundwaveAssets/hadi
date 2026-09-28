@@ -95,36 +95,40 @@ Trois façons d'installer Hadi. La première convient à la quasi-totalité des 
 
 | | Pour qui | Ce qu'il faut | Durée |
 |---|---|---|---|
-| **A. Docker, depuis les sources** | Le cas général | Docker seul | 5 à 15 min |
-| **B. Docker, images publiées** | Qui veut le raccourci | Docker seul | 1 à 2 min |
+| **A. Docker, images publiées** | Le cas général | Docker seul | 1 à 2 min |
+| **B. Docker, depuis les sources** | Qui veut lire le code avant de l'exécuter, ou se passer de registre | Docker seul | 5 à 15 min |
 | **C. Sans Docker** | Qui veut tout piloter à la main | Python, Node, PostgreSQL | 10 à 20 min |
 
-#### A. Docker, depuis les sources
-
-```bash
-git clone https://github.com/SoundwaveAssets/hadi.git && cd hadi
-docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
-```
-
-Docker construit les deux images et démarre la pile : base PostgreSQL, API, interface. Ouvrez **<http://localhost:8088>**.
-
-Aucun fichier de configuration à créer, aucune base à préparer : chaque réglage a un défaut fonctionnel.
-
-#### B. Docker, images publiées
+#### A. Docker, images publiées
 
 ```bash
 curl -O https://raw.githubusercontent.com/SoundwaveAssets/hadi/main/docker-compose.yml
 docker compose up -d
 ```
 
-Rien à construire : `docker-compose.yml` ne référence que les images publiées, les contextes de construction vivent dans `docker-compose.build.yml`. En production, épinglez la version plutôt que de suivre `latest` :
+Rien à construire : Docker tire les images depuis [GHCR](https://github.com/SoundwaveAssets/hadi/pkgs/container/hadi-api) et démarre la pile, base PostgreSQL comprise. Ouvrez **<http://localhost:8088>**.
+
+Aucun fichier de configuration à créer, aucune base à préparer : chaque réglage a un défaut fonctionnel.
+
+En production, épinglez la version plutôt que de suivre `latest` :
 
 ```bash
 HADI_VERSION=0.1.0 docker compose up -d
 ```
 
+Les versions publiées sont listées sur la [page des releases](https://github.com/SoundwaveAssets/hadi/releases).
+
 > [!NOTE]
-> **Cette voie n'est pas encore disponible.** Les images arriveront sur [GHCR](https://github.com/SoundwaveAssets/hadi/pkgs/container/hadi-api) avec la première release, en `amd64` et `arm64`. D'ici là, utilisez la voie A. Les versions publiées sont listées sur la [page des releases](https://github.com/SoundwaveAssets/hadi/releases).
+> Les images publiées sont en `amd64`. Sur un Mac Apple Silicon, utilisez la voie B, qui construit l'image pour votre architecture.
+
+#### B. Docker, depuis les sources
+
+```bash
+git clone https://github.com/SoundwaveAssets/hadi.git && cd hadi
+docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+```
+
+Docker construit les deux images puis démarre la même pile. `docker-compose.yml` ne référence que les images publiées ; les contextes de construction vivent dans `docker-compose.build.yml`, et les deux se superposent.
 
 #### C. Sans Docker
 
