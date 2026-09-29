@@ -84,13 +84,36 @@ def test_personne_a_prevenir_pas_de_message(session):
 
 # --- mise en file et envoi ------------------------------------------------------------
 
-def test_la_notification_part_dans_la_file(session, monkeypatch):
+@pytest.mark.anyio
+async def test_la_notification_part_dans_la_file(session, monkeypatch):
     mis_en_file = []
-    monkeypatch.setattr("app.orchestration.jobs.defer_notification", lambda message: mis_en_file.append(message))
+
+    async def depot(message):
+        mis_en_file.append(message)
+
+    monkeypatch.setattr("app.orchestration.jobs.enqueue_notification", depot)
     monkeypatch.setattr(notifier, "send_email", lambda *a, **k: pytest.fail("aucun SMTP ne doit être ouvert dans le fil de la décision"))
 
-    notifier.notify_waiting_or_blocked(session, **BLOCKED)
+    await notifier.notify_waiting_or_blocked(session, **BLOCKED)
     assert len(mis_en_file) == 1 and mis_en_file[0].recipients == ["admin@exemple.org", "rssi@exemple.org"]
+
+
+@pytest.mark.anyio
+async def test_une_notification_mise_en_file_n_est_pas_aussi_envoyee_sur_place(session, monkeypatch):
+    """
+    Le dépôt s'attend sur la boucle de la file, il ne s'y confie pas : le
+    faire par `submit()` depuis un job bloquait cette même boucle jusqu'au
+    délai, la décision repartait par l'envoi direct, puis le job finissait
+    par partir lui aussi. Le destinataire recevait deux fois la même alerte.
+    """
+    monkeypatch.setattr("app.orchestration.jobs.enqueue_notification", _depot_qui_reussit)
+    monkeypatch.setattr(notifier, "send_email", lambda *a, **k: pytest.fail("déjà en file : aucun envoi direct"))
+
+    await notifier.notify_waiting_or_blocked(session, **BLOCKED)
+
+
+async def _depot_qui_reussit(message):
+    return 1
 
 
 def test_sans_file_de_travail_l_envoi_se_fait_sur_place(session, monkeypatch):
@@ -105,10 +128,27 @@ def test_sans_file_de_travail_l_envoi_se_fait_sur_place(session, monkeypatch):
     assert len(envoyes) == 1 and "Dérogation accordée" in envoyes[0][1]
 
 
-def test_un_echec_d_envoi_ne_remonte_jamais_dans_la_decision(session, monkeypatch):
-    monkeypatch.setattr("app.orchestration.jobs.defer_notification", lambda message: (_ for _ in ()).throw(RuntimeError("file absente")))
+@pytest.mark.anyio
+async def test_un_echec_d_envoi_ne_remonte_jamais_dans_la_decision(session, monkeypatch):
+    async def file_absente(message):
+        raise RuntimeError("file absente")
+
+    monkeypatch.setattr("app.orchestration.jobs.enqueue_notification", file_absente)
     monkeypatch.setattr(notifier, "send_email", lambda *a, **k: (_ for _ in ()).throw(OSError("SMTP injoignable")))
-    notifier.notify_waiting_or_blocked(session, **BLOCKED)  # ne lève pas
+    await notifier.notify_waiting_or_blocked(session, **BLOCKED)  # ne lève pas
+
+
+@pytest.mark.anyio
+async def test_sans_file_la_notification_part_quand_meme(session, monkeypatch):
+    """La file indisponible ne doit pas faire disparaître l'alerte."""
+    async def file_absente(message):
+        raise RuntimeError("file absente")
+
+    envoyes = []
+    monkeypatch.setattr("app.orchestration.jobs.enqueue_notification", file_absente)
+    monkeypatch.setattr(notifier, "send_email", lambda config, to, subject, body: envoyes.append(subject))
+    await notifier.notify_waiting_or_blocked(session, **BLOCKED)
+    assert envoyes == ["[Hadi] Pipeline bloqué : demo"]
 
 
 def test_l_envoi_relit_la_configuration_au_dernier_moment(session, monkeypatch):

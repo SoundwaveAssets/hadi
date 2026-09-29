@@ -2,7 +2,7 @@
 Épinglage du tag d'image dans un manifeste Kubernetes.
 
 C'est l'écriture GitOps du déploiement : après une décision favorable,
-l'Orchestrateur remplace le tag de l'image (RELEASE_TAG à la première fois,
+Hadi remplace le tag de l'image (RELEASE_TAG à la première fois,
 le SHA précédent ensuite) par le SHA du commit approuvé, puis commite le
 manifeste. Argo CD voit un vrai diff et déploie cette image précise, pas un
 tag mobile.

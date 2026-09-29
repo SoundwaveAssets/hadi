@@ -201,7 +201,7 @@ async def evaluate_pipeline_and_decide(
     if hardened_decision in (Decision.WAITING_HUMAN.value, Decision.BLOCKED.value):
         # Mise en file seulement : l'envoi SMTP appartient au job, avec ses
         # réessais. Une décision déjà actée n'attend pas un serveur de mail.
-        notify_waiting_or_blocked(
+        await notify_waiting_or_blocked(
             session,
             repository=repository,
             commit_hash=commit_hash,

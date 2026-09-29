@@ -8,7 +8,7 @@ class NotificationConfig(SQLModel, table=True):
     Configuration du module Notifications & Alertes, ligne unique (id=1),
     même convention que ToolConfig. Un serveur SMTP interne/d'entreprise,
     jamais un service tiers imposé : reste cohérent avec la portabilité
-    100% de l'Orchestrateur (aucune dépendance à un fournisseur externe
+    100% de Hadi (aucune dépendance à un fournisseur externe
     obligatoire, juste un serveur SMTP quelconque que l'administrateur
     renseigne).
     """

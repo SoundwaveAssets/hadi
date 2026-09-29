@@ -78,7 +78,7 @@ def send_test_email(
     if not config or not config.smtp_host or not config.from_address:
         raise HTTPException(status_code=400, detail="Configurez d'abord le serveur SMTP et l'adresse d'expédition.")
     try:
-        send_email(config, [payload.to], "[Orchestrateur] E-mail de test", "Ceci est un e-mail de test envoyé depuis l'Orchestrateur CI/CD.")
+        send_email(config, [payload.to], "[Hadi] E-mail de test", "Ceci est un e-mail de test envoyé depuis Hadi.")
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Échec de l'envoi : {e}") from e
     return {"status": "success", "message": f"E-mail de test envoyé à {payload.to}."}

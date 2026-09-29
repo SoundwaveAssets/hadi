@@ -66,7 +66,7 @@ services:
       ORCHESTRATOR_LOGIN_LOCKOUT_MINUTES: ${ORCHESTRATOR_LOGIN_LOCKOUT_MINUTES:-15}
       ORCHESTRATOR_PASSWORD_MIN_LENGTH: ${ORCHESTRATOR_PASSWORD_MIN_LENGTH:-12}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
-      # URL de l'Orchestrateur telle que vos agents Jenkins la voient. Injectée
+      # URL de Hadi telle que vos agents Jenkins la voient. Injectée
       # dans les Jenkinsfile générés : à renseigner dès que Jenkins tourne
       # ailleurs que sur la machine hôte.
       ORCHESTRATOR_PUBLIC_URL: ${ORCHESTRATOR_PUBLIC_URL:-http://localhost:8000}

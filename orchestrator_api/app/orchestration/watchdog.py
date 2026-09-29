@@ -25,13 +25,6 @@ from app.models.pipeline import Pipeline, append_pipeline_log
 
 logger = logging.getLogger(__name__)
 
-#: Au-delà de ce délai, un job encore « en cours » n'appartient plus à aucun
-#: worker vivant. Calibré au-dessus du job le plus long : une analyse cumule
-#: build Jenkins et scan SonarQube, chacun plafonné à 900 s avec deux
-#: tentatives. Le délai d'immobilité des pipelines, lui, se compte en heures et
-#: récupérerait trop tard.
-ORPHAN_JOB_MINUTES = 75
-
 #: Statut d'arrivée selon l'étape où le pipeline s'est figé.
 _FAILURE_OF = {
     PipelineStatus.PENDING.value: PipelineStatus.ANALYSIS_FAILED.value,
@@ -90,7 +83,7 @@ async def sweep() -> int:
     """Point d'entrée de la tâche périodique (voir orchestration/jobs.py)."""
     from app.orchestration.queue import worker
 
-    repris = await worker.requeue_stalled_async(older_than_seconds=ORPHAN_JOB_MINUTES * 60)
+    repris = await worker.requeue_stalled_async()
     if repris:
         logger.info("Chien de garde : %s job(s) orphelin(s) remis en file.", repris)
     with Session(db_manager.engine) as session:

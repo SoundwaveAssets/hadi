@@ -27,7 +27,7 @@ class Settings(BaseSettings):
         default="http://localhost:8088", alias="CORS_ALLOWED_ORIGINS"
     )
 
-    #: URL de l'Orchestrateur telle qu'un agent Jenkins la voit, injectée dans
+    #: URL de Hadi telle qu'un agent Jenkins la voit, injectée dans
     #: les Jenkinsfile générés.
     public_url: str = Field(default="http://localhost:8000", alias="ORCHESTRATOR_PUBLIC_URL")
 

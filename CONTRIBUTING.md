@@ -140,6 +140,24 @@ cd orchestrator_api && pytest tests/test_decision.py -v
 
 La CI vérifie automatiquement sur Linux, macOS et Windows. Une PR ne peut être fusionnée que si tous les jobs passent.
 
+## Publier les images
+
+Les images sont construites pour `linux/amd64` et `linux/arm64`, et poussées sur GHCR sous les étiquettes `X.Y.Z`, `X.Y` et `latest`.
+
+```bash
+export BUILDX_GIT_INFO=false
+docker buildx build --platform linux/amd64,linux/arm64 --target api   -t ghcr.io/soundwaveassets/hadi-api:X.Y.Z   -t ghcr.io/soundwaveassets/hadi-api:X.Y   -t ghcr.io/soundwaveassets/hadi-api:latest --push .
+docker buildx build --platform linux/amd64,linux/arm64 --target web   -t ghcr.io/soundwaveassets/hadi-web:X.Y.Z   -t ghcr.io/soundwaveassets/hadi-web:X.Y   -t ghcr.io/soundwaveassets/hadi-web:latest --push ./frontend
+```
+
+`BUILDX_GIT_INFO=false` n'est pas cosmétique : sans cette variable, buildx inscrit l'URL du dépôt distant de VOTRE copie de travail dans l'attestation de provenance de l'image publiée. Le lien vers le dépôt public est porté par le `LABEL org.opencontainers.image.source` des Dockerfile, qui n'a pas besoin d'aller le chercher dans votre configuration Git.
+
+Vérifiez ensuite que les deux architectures sont bien présentes :
+
+```bash
+docker manifest inspect ghcr.io/soundwaveassets/hadi-api:X.Y.Z
+```
+
 ## Questions
 
 Ouvrez une issue avec le label `question` pour toute question sur l'architecture ou les conventions.

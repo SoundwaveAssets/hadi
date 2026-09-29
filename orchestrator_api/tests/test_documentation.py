@@ -109,3 +109,14 @@ def test_aucune_version_inventee_dans_la_documentation():
     publiees = set(re.findall(r"^## \[(\d+\.\d+\.\d+)\]", (RACINE / "CHANGELOG.md").read_text(encoding="utf-8"), re.M))
     citees = set(re.findall(r"HADI_VERSION=(\d[\w.]*)", README))
     assert citees <= publiees, f"versions citées mais jamais publiées : {sorted(citees - publiees)}"
+
+
+def test_la_feuille_de_route_ne_contredit_pas_l_installation():
+    """
+    « Images multi-architecture publiées » a été coché pendant que la section
+    Démarrage prévenait que les images sont en `amd64` : le lecteur d'une
+    machine ARM lisait l'inverse selon la section ouverte.
+    """
+    amd64_seul = "Les images publiées sont en `amd64`" in README
+    multi_architecture_coche = "- [x] Images multi-architecture publiées" in README
+    assert not (amd64_seul and multi_architecture_coche)

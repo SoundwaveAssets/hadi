@@ -5,7 +5,7 @@ approuvé. `lock=<dépôt>` : jamais deux jobs du même dépôt en même temps ;
 
 Depuis une route (boucle d'uvicorn) : defer_analysis / defer_deployment,
 qui confient le dépôt à la boucle de la file. Depuis un job (déjà sur cette
-boucle) : enqueue_deployment.
+boucle) : enqueue_deployment, enqueue_notification.
 """
 from __future__ import annotations
 
@@ -99,8 +99,13 @@ def defer_deployment(pipeline_id: int | None, repository: str, commit_hash: str,
     return worker.submit(enqueue_deployment(pipeline_id, repository, commit_hash, audit_id)).result(timeout=15)
 
 
+async def enqueue_notification(message: Message) -> int | None:
+    """Depuis la boucle de la file (un job en cours) : le dépôt se fait sur place."""
+    return await notification.defer_async(
+        recipients=list(message.recipients), subject=message.subject, body=message.body
+    )
+
+
 def defer_notification(message: Message) -> int | None:
-    """Depuis n'importe quel thread : une notification n'est jamais envoyée dans le fil de la requête."""
-    return worker.submit(
-        notification.defer_async(recipients=list(message.recipients), subject=message.subject, body=message.body)
-    ).result(timeout=15)
+    """Depuis un autre thread : une notification n'est jamais envoyée dans le fil de la requête."""
+    return worker.submit(enqueue_notification(message)).result(timeout=15)

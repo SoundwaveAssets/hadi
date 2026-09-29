@@ -32,7 +32,7 @@ class User(SQLModel, table=True):
     # Protection anti-brute-force sur /login (voir routes_auth.py) : compteur
     # remis à zéro à chaque connexion réussie, verrouillage temporaire du
     # compte au-delà du seuil. En base plutôt qu'en mémoire du process, pour
-    # rester valable même si l'Orchestrateur tourne en plusieurs instances.
+    # rester valable même si Hadi tourne en plusieurs instances.
     failed_login_attempts: int = Field(default=0)
     locked_until: Optional[datetime] = Field(default=None, sa_column=Column(DateTime(timezone=True)))
 

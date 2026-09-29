@@ -1,5 +1,5 @@
 # =============================================================================
-#  Interface web de l'Orchestrateur CI/CD
+#  Interface web de Hadi
 # =============================================================================
 # Sert le build de PRODUCTION (`next start`), jamais `next dev` : ce dernier
 # expose les source maps de toute l'application et n'est pas prévu pour ça.
@@ -12,7 +12,15 @@ COPY package.json package-lock.json ./
 # `npm ci` et non `npm install` : respecte le lockfile à la lettre, donc un
 # build reproductible. `npm install` peut mettre à jour des dépendances en
 # silence, ce qui est exactement ce qu'un lockfile existe pour empêcher.
-RUN npm ci
+#
+# Les délais et réessais sont explicites : sur une liaison lente, les valeurs
+# par défaut abandonnent en EIDLETIMEOUT et la construction depuis les sources
+# échoue alors que rien n'est cassé. `--no-audit` supprime un appel réseau qui
+# n'apporte rien à l'image produite : l'audit des dépendances a sa place dans
+# la CI, pas dans la construction. Le cache npm survit aux reprises, pour ne
+# pas retélécharger l'arbre entier après une coupure.
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --no-audit --fetch-timeout=600000 --fetch-retries=5 --fetch-retry-maxtimeout=120000
 
 # -----------------------------------------------------------------------------
 FROM node:${NODE_VERSION}-alpine AS builder
@@ -30,6 +38,14 @@ RUN npm run build
 
 # -----------------------------------------------------------------------------
 FROM node:${NODE_VERSION}-alpine AS web
+
+# Rattache l'image au dépôt public : c'est ce lien que GHCR affiche sur le
+# paquet, et la seule source à publier. Le dépôt d'origine de la construction
+# est tenu hors de l'image (BUILDX_GIT_INFO=false, voir CONTRIBUTING.md).
+LABEL org.opencontainers.image.source="https://github.com/SoundwaveAssets/hadi" \
+      org.opencontainers.image.licenses="Apache-2.0" \
+      org.opencontainers.image.title="Hadi Web" \
+      org.opencontainers.image.description="Passerelle de décision entre le dépôt et la production, interface"
 
 RUN apk add --no-cache curl \
     && addgroup -g 10002 -S nextjs \

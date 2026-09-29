@@ -57,7 +57,7 @@ function StatChip({ label, value }: { label: string; value: string }) {
 
 /**
  * Le déploiement (sync Argo CD) n'est pas une étape du Jenkinsfile, il se
- * déclenche après, depuis l'Orchestrateur lui-même, mais visuellement, c'est
+ * déclenche après, depuis Hadi lui-même, mais visuellement, c'est
  * la suite logique de la frise : on le synthétise depuis le statut du pipeline.
  * Un pipeline bloqué ou en attente donne une étape « interrompue », pas « en
  * attente » : ce déploiement n'aura pas lieu tant qu'une décision ne le permet pas.

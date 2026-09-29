@@ -1,7 +1,7 @@
 """
 Fichiers de départ pour un dépôt enregistré : le Jenkinsfile (construit et
 pousse l'image taguée par le commit, jamais 'latest', et s'arrête à la
-vérification de sécurité tant que l'Orchestrateur n'a pas tranché) et le
+vérification de sécurité tant que Hadi n'a pas tranché) et le
 manifeste Kubernetes (valide tel quel, tag `RELEASE_TAG` remplacé par le SHA
 approuvé à chaque déploiement, voir domain/manifest.py).
 

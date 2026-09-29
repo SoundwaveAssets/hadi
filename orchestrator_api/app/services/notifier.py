@@ -10,6 +10,7 @@ réessayé au lieu d'être perdu. Le flow d'analyse ou la dérogation qui
 déclenche la notification n'attend jamais le serveur SMTP, et ne peut pas
 échouer à cause de lui.
 """
+import asyncio
 import logging
 import smtplib
 from dataclasses import dataclass
@@ -98,7 +99,7 @@ def prepare_waiting_or_blocked(session: Session, *, repository: str, commit_hash
     label = "en attente de validation" if decision == "WAITING_HUMAN" else "bloqué"
     return Message(
         recipients=recipients,
-        subject=f"[Orchestrateur] Pipeline {label} : {repository}",
+        subject=f"[Hadi] Pipeline {label} : {repository}",
         body=(
             f"Le pipeline {repository} ({commit_hash[:12]}) est {label}.\n\n"
             f"{justification}\n\n"
@@ -125,7 +126,7 @@ def prepare_derogation_granted(
 
     return Message(
         recipients=recipients,
-        subject=f"[Orchestrateur] Dérogation accordée : {repository}",
+        subject=f"[Hadi] Dérogation accordée : {repository}",
         body=(
             f"Une dérogation a été accordée pour le pipeline {repository} ({commit_hash[:12]}).\n\n"
             f"Première validation : {approved_by}\n"
@@ -149,9 +150,23 @@ def deliver(session: Session, message: Message) -> None:
     send_email(config, message.recipients, message.subject, message.body)
 
 
-def notify_waiting_or_blocked(session: Session, **kwargs) -> None:
-    """Appelé depuis decision_engine.py juste après avoir tranché WAITING_HUMAN ou BLOCKED."""
-    _dispatch(session, prepare_waiting_or_blocked(session, **kwargs))
+async def notify_waiting_or_blocked(session: Session, **kwargs) -> None:
+    """
+    Appelé depuis decision_engine.py juste après avoir tranché WAITING_HUMAN
+    ou BLOCKED, donc depuis la boucle de la file : le dépôt s'attend ici, il
+    ne se confie pas à la boucle qui nous exécute.
+    """
+    message = prepare_waiting_or_blocked(session, **kwargs)
+    if message is None:
+        return
+    # Import local : jobs.py importe les flows, qui importent ce module.
+    from app.orchestration.jobs import enqueue_notification
+
+    try:
+        await enqueue_notification(message)
+    except Exception as e:
+        logger.warning(f"Mise en file impossible ({e!r}), envoi direct de la notification « {message.subject} ».")
+        await asyncio.to_thread(_deliver_best_effort, session, message)
 
 
 def notify_derogation_granted(session: Session, **kwargs) -> None:
@@ -161,20 +176,24 @@ def notify_derogation_granted(session: Session, **kwargs) -> None:
 
 def _dispatch(session: Session, message: Message | None) -> None:
     """
-    Met le message en file. Sans file de travail (développement sans
-    PostgreSQL, tests), on envoie sur place plutôt que de perdre la
-    notification : best-effort dans les deux cas, jamais d'exception.
+    Met le message en file depuis un thread ordinaire. Sans file de travail
+    (développement sans PostgreSQL, tests), on envoie sur place plutôt que de
+    perdre la notification : best-effort dans les deux cas, jamais d'exception.
     """
     if message is None:
         return
-    # Import local : jobs.py importe les flows, qui importent ce module.
     from app.orchestration.jobs import defer_notification
 
     try:
         defer_notification(message)
     except Exception as e:
-        logger.warning(f"Mise en file impossible ({e}), envoi direct de la notification « {message.subject} ».")
-        try:
-            deliver(session, message)
-        except Exception as error:
-            logger.warning(f"Échec d'envoi de la notification « {message.subject} » : {error}")
+        logger.warning(f"Mise en file impossible ({e!r}), envoi direct de la notification « {message.subject} ».")
+        _deliver_best_effort(session, message)
+
+
+def _deliver_best_effort(session: Session, message: Message) -> None:
+    """Envoi de secours : une notification perdue ne doit jamais faire échouer une décision."""
+    try:
+        deliver(session, message)
+    except Exception as error:
+        logger.warning(f"Échec d'envoi de la notification « {message.subject} » : {error}")

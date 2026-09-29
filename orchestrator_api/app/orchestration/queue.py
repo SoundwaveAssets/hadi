@@ -86,19 +86,17 @@ class QueueWorker:
                 except asyncio.CancelledError:
                     pass
 
-    async def requeue_stalled_async(self, older_than_seconds: int | None = None) -> int:
+    async def requeue_stalled_async(self) -> int:
         """
         Jobs laissés en cours par un process mort : remis en file, pas perdus.
 
-        Au démarrage, aucun job ne nous appartient : le critère du battement de
-        cœur suffit. En marche, il ne suffit plus, car il désigne aussi les
-        jobs que ce worker exécute en ce moment ; `older_than_seconds` évite
-        alors d'interrompre un travail légitimement long.
+        Le critère est le battement de cœur du worker qui les tient, pas leur
+        durée : un job légitimement long reste intouché tant que son worker
+        respire, et un worker mort est détecté en une trentaine de secondes
+        plutôt qu'au bout d'un seuil calibré à la louche sur le job le plus
+        lent.
         """
-        if older_than_seconds is None:
-            stalled = list(await queue.job_manager.get_stalled_jobs())
-        else:
-            stalled = list(await queue.job_manager.get_stalled_jobs(nb_seconds=older_than_seconds))
+        stalled = list(await queue.job_manager.get_stalled_jobs())
         for job in stalled:
             await queue.job_manager.retry_job(job)
         if stalled:
@@ -106,15 +104,31 @@ class QueueWorker:
         return len(stalled)
 
     def requeue_stalled(self) -> int:
-        """Reprise depuis un autre thread (chien de garde)."""
+        """Reprise depuis un autre thread."""
         if self._loop is None or not self._ready.is_set():
             return 0
         return self.submit(self.requeue_stalled_async()).result(timeout=30)
 
     def submit(self, coro: Coroutine[Any, Any, Any]) -> concurrent.futures.Future:
+        """
+        Confie une coroutine à la boucle de la file depuis un AUTRE thread.
+        Appelée depuis la boucle elle-même, elle rendrait un future que seule
+        cette boucle peut résoudre : l'attendre la bloquerait jusqu'au délai.
+        On refuse tout de suite plutôt que de laisser passer un interblocage.
+        """
         if self._loop is None or not self._ready.is_set():
             coro.close()
             raise RuntimeError("File de travail indisponible : la base n'est pas encore connectée.")
+        try:
+            courante = asyncio.get_running_loop()
+        except RuntimeError:
+            courante = None
+        if courante is self._loop:
+            coro.close()
+            raise RuntimeError(
+                "submit() depuis la boucle de la file : utilisez la variante asynchrone (await) "
+                "au lieu d'attendre un future que cette boucle ne peut pas résoudre."
+            )
         return asyncio.run_coroutine_threadsafe(coro, self._loop)
 
     def stop(self) -> None:

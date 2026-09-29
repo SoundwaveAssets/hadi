@@ -15,7 +15,7 @@ from keyring.backend import KeyringBackend
 from keyring.backends.null import Keyring as NullKeyring
 from typer.testing import CliRunner
 
-from hadi import client, session, settings
+from hadi import __version__, client, session, settings
 from hadi.app import app
 
 runner = CliRunner()
@@ -125,7 +125,7 @@ def fake_api(monkeypatch):
 
 
 def test_version_et_aide():
-    assert "hadi 0.1.0" in runner.invoke(app, ["--version"]).output
+    assert f"hadi {__version__}" in runner.invoke(app, ["--version"]).output
     output = runner.invoke(app, ["--help"]).output
     for command in ("login", "pipelines", "watch", "approve", "audit-verify", "gate", "shell"):
         assert command in output

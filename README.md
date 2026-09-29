@@ -997,7 +997,7 @@ readinessProbe:
 | Plusieurs répliques de l'API | Supportées : la file, les profils comportementaux et l'état vivent en base, pas en mémoire |
 | `ORCHESTRATOR_PIPELINE_STALL_MINUTES` | À augmenter si vos analyses SonarQube dépassent régulièrement deux heures |
 
-Le chien de garde balaie les pipelines figés toutes les dix minutes (tâche périodique `hadi.chien_de_garde`, file `maintenance`).
+Le chien de garde balaie les pipelines figés toutes les dix minutes (tâche périodique `hadi.chien_de_garde`, file `maintenance`). Il remet aussi en file les jobs tenus par un worker qui ne répond plus : le critère est le battement de cœur de ce worker, pas la durée du job, si bien qu'une analyse longue n'est jamais interrompue et qu'un process mort est récupéré en une trentaine de secondes.
 
 ---
 
@@ -1121,7 +1121,8 @@ Ce dont Hadi dépend réellement : **PostgreSQL**, et les outils qu'il orchestre
 - [x] Déploiement GitOps prouvé (SHA inscrit, image observée sur le cluster)
 - [x] Critère de sécurité réglable (code neuf, Quality Gate, dette totale)
 - [x] File de travail PostgreSQL, chien de garde des pipelines figés
-- [x] Images multi-architecture publiées, exécutables CLI pour les trois systèmes
+- [x] Exécutables CLI publiés pour Windows, Linux et macOS, avec leur empreinte SHA-256
+- [ ] Images `arm64` publiées à côté des images `amd64`
 - [ ] Jeton de session en cookie `httpOnly` plutôt qu'en `localStorage`
 - [ ] Modèle « exécution » distinct du modèle « commit » (historique de chaque tentative)
 - [ ] Analyse des dépendances en CVSS ([Trivy](https://trivy.dev/), [OWASP Dependency-Check](https://owasp.org/www-project-dependency-check/))

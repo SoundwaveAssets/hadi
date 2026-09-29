@@ -240,7 +240,7 @@ async def get_pipeline_logs(
     Consulter les journaux d'exécution. La console Jenkins est allée
     chercher en direct auprès de Jenkins (via le numéro de build conservé) ;
     le déroulé de l'analyse et du déploiement vient de `execution_log`, la
-    narration que l'Orchestrateur écrit lui-même au fil de son propre
+    narration que Hadi écrit lui-même au fil de son propre
     workflow interne (plus de service d'orchestration séparé à interroger).
     """
     pipeline = db.get(Pipeline, pipeline_id)

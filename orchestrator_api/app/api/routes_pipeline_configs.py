@@ -122,7 +122,7 @@ async def _auto_provision(db: Session, config: PipelineConfig) -> list[str]:
                     job_name=job_name,
                     git_repo_url=config.git_repo_url,
                     credentials_id=config.jenkins_credentials_id,
-                    description=f"Créé automatiquement par l'Orchestrateur pour le pipeline '{config.repository}'.",
+                    description=f"Créé automatiquement par Hadi pour le pipeline '{config.repository}'.",
                 )
             except Exception as e:
                 warnings.append(f"Job Jenkins non créé automatiquement : {e}")

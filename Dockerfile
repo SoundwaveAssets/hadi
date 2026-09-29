@@ -1,5 +1,5 @@
 # =============================================================================
-#  API de l'Orchestrateur CI/CD
+#  API de Hadi
 # =============================================================================
 # Build multi-étages : les outils de compilation (gcc, en-têtes libpq) restent
 # dans l'étage `builder` et n'entrent jamais dans l'image finale.
@@ -31,6 +31,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # -----------------------------------------------------------------------------
 FROM python:${PYTHON_VERSION}-slim AS api
+
+# Rattache l'image au dépôt public : c'est ce lien que GHCR affiche sur le
+# paquet, et la seule source à publier. Le dépôt d'origine de la construction
+# est tenu hors de l'image (BUILDX_GIT_INFO=false, voir CONTRIBUTING.md).
+LABEL org.opencontainers.image.source="https://github.com/SoundwaveAssets/hadi" \
+      org.opencontainers.image.licenses="Apache-2.0" \
+      org.opencontainers.image.title="Hadi API" \
+      org.opencontainers.image.description="Passerelle de décision entre le dépôt et la production, API et file de travail"
 
 # libpq5 seule (bibliothèque d'exécution), pas libpq-dev ni gcc.
 RUN apt-get update \

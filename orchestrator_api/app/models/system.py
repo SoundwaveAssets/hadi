@@ -8,7 +8,7 @@ class SystemSettings(SQLModel, table=True):
     Ligne unique (id=1) suivant l'avancement du wizard d'installation.
 
     Vit en base plutôt que sur le disque d'une instance : c'est la source de
-    vérité partagée quand l'Orchestrateur tourne en plusieurs instances
+    vérité partagée quand Hadi tourne en plusieurs instances
     redondantes. Le seul état qui reste local à chaque instance est
     la connexion elle-même à la base (voir core/database.py).
     """

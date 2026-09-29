@@ -24,6 +24,9 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
+  # Le dépôt d'origine de la construction n'a rien à faire dans l'attestation
+  # de provenance : le lien public est porté par un LABEL des Dockerfile.
+  BUILDX_GIT_INFO: "false"
 
 jobs:
   images:
