@@ -120,3 +120,16 @@ def test_la_feuille_de_route_ne_contredit_pas_l_installation():
     amd64_seul = "Les images publiées sont en `amd64`" in README
     multi_architecture_coche = "- [x] Images multi-architecture publiées" in README
     assert not (amd64_seul and multi_architecture_coche)
+
+
+def test_les_defauts_annonces_sont_ceux_du_fichier_compose():
+    """
+    Le README donnait `orchestrator` comme mot de passe par défaut de la base,
+    alors que la pile en livre un autre : un lecteur qui s'y fie se trompe de
+    secret, et croit l'avoir changé.
+    """
+    compose = (RACINE / "docker-compose.yml").read_text(encoding="utf-8")
+    for variable in ("DB_PASSWORD", "DB_NAME", "DB_USER", "PUBLIC_PORT"):
+        defaut = re.search(rf"\$\{{{variable}:-([^}}]+)\}}", compose)
+        if defaut:
+            assert defaut.group(1) in README, f"défaut de {variable} absent du README : {defaut.group(1)}"

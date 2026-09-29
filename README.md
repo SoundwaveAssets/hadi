@@ -14,7 +14,7 @@ Hadi s'intercale dans votre chaîne CI/CD existante : il écoute les pushs, fait
 [![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=next.js&logoColor=white)](https://nextjs.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15%2B-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Docker](https://img.shields.io/badge/Docker-compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
-[![CI](https://img.shields.io/badge/CI-Linux%20%C2%B7%20macOS%20%C2%B7%20Windows-success?logo=githubactions&logoColor=white)](.github/workflows/ci.yml)
+[![Plateformes](https://img.shields.io/badge/plateformes-Linux%20%C2%B7%20macOS%20%C2%B7%20Windows-informational)](.github/workflows/ci.yml)
 
 **[Démarrer](#2-démarrage)** · **[Fonctionnement](#3-comment-ça-marche)** · **[Brancher vos outils](#6-brancher-vos-outils)** · **[Configuration](#9-configuration)** · **[API](#10-référence-de-lapi)** · **[CLI](#11-client-en-ligne-de-commande)** · **[Sécurité](#12-modèle-de-sécurité)** · **[Dépannage](#15-dépannage)**
 
@@ -623,7 +623,8 @@ Tout passe par des variables d'environnement, et tout a un défaut : rien n'est 
 
 | Variable | Rôle | Défaut |
 |---|---|---|
-| `DB_NAME` · `DB_USER` · `DB_PASSWORD` | Base PostgreSQL de la pile | `orchestrator` |
+| `DB_NAME` · `DB_USER` | Base PostgreSQL de la pile | `orchestrator` |
+| `DB_PASSWORD` | Mot de passe de cette base. **À changer avant toute mise en production** | `changez-ce-mot-de-passe` |
 | `DB_HOST` · `DB_PORT` | Base externe, si vous n'utilisez pas celle fournie | service interne · `5432` |
 
 > [!IMPORTANT]
@@ -1097,7 +1098,7 @@ make lint        # ruff, ESLint, TypeScript
 
 La suite tourne **sans réseau, sans PostgreSQL, sans Jenkins et sans SonarQube** : SQLite en mémoire, dépendances externes remplacées. Elle couvre le fail-closed (une analyse non vérifiable ne passe jamais pour un feu vert), la résistance des journaux à un rescellement sans la clé, l'épinglage du manifeste, la lecture des webhooks des trois forges, et le chemin de déploiement complet.
 
-Vingt-huit contrôles de cohérence tournent à chaque exécution et cassent la construction à la première dérive : vocabulaire des statuts identique entre l'API, l'interface et la CLI ; dictionnaires FR/EN alignés ; aucune fonction publique orpheline ; aucune route qu'aucun client n'appelle ; aucune page sans lien de navigation ; aucun hook exporté inutilisé.
+Des contrôles de cohérence tournent à chaque exécution et cassent la construction à la première dérive : vocabulaire des statuts identique entre l'API, l'interface et la CLI ; dictionnaires FR/EN alignés ; aucune fonction publique orpheline ; aucune route qu'aucun client n'appelle ; aucune page sans lien de navigation ; aucun hook exporté inutilisé.
 
 Dix-sept d'entre eux gardent **cette documentation** : chaque route, variable d'environnement, statut, module, critère de sécurité et commande de la CLI doit y figurer ; aucun lien ni aucune ancre ne doit être mort ; le port publié doit être le même dans le `docker-compose.yml`, le `Makefile`, la CI, l'interface et ce fichier ; et la version du changelog doit correspondre à celle des trois projets.
 
