@@ -118,13 +118,11 @@ HADI_VERSION=0.1.0 docker compose up -d
 
 Les versions publiées sont listées sur la [page des releases](https://github.com/SoundwaveAssets/hadi/releases).
 
-> [!NOTE]
-> Les images publiées sont en `amd64`. Sur un Mac Apple Silicon, utilisez la voie B, qui construit l'image pour votre architecture.
-
 #### B. Docker, depuis les sources
 
 ```bash
-git clone https://github.com/SoundwaveAssets/hadi.git && cd hadi
+git clone https://github.com/SoundwaveAssets/hadi.git
+cd hadi
 docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
 ```
 
@@ -133,7 +131,8 @@ Docker construit les deux images puis démarre la même pile. `docker-compose.ym
 #### C. Sans Docker
 
 ```bash
-git clone https://github.com/SoundwaveAssets/hadi.git && cd hadi
+git clone https://github.com/SoundwaveAssets/hadi.git
+cd hadi
 make install     # dépendances de l'API, de la CLI et de l'interface
 make dev-api     # API sur :8000
 make dev-web     # interface sur :8088
@@ -1123,7 +1122,7 @@ Ce dont Hadi dépend réellement : **PostgreSQL**, et les outils qu'il orchestre
 - [x] Critère de sécurité réglable (code neuf, Quality Gate, dette totale)
 - [x] File de travail PostgreSQL, chien de garde des pipelines figés
 - [x] Exécutables CLI publiés pour Windows, Linux et macOS, avec leur empreinte SHA-256
-- [ ] Images `arm64` publiées à côté des images `amd64`
+- [x] Images publiées en `amd64` et `arm64`, Apple Silicon et serveurs ARM compris
 - [ ] Jeton de session en cookie `httpOnly` plutôt qu'en `localStorage`
 - [ ] Modèle « exécution » distinct du modèle « commit » (historique de chaque tentative)
 - [ ] Analyse des dépendances en CVSS ([Trivy](https://trivy.dev/), [OWASP Dependency-Check](https://owasp.org/www-project-dependency-check/))
