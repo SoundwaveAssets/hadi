@@ -97,7 +97,7 @@ Trois façons d'installer Hadi. La première convient à la quasi-totalité des 
 |---|---|---|---|
 | **A. Docker, images publiées** | Le cas général | Docker seul | 1 à 2 min |
 | **B. Docker, depuis les sources** | Qui veut lire le code avant de l'exécuter, ou se passer de registre | Docker seul | 5 à 15 min |
-| **C. Sans Docker** | Qui veut tout piloter à la main | Python, Node, PostgreSQL | 10 à 20 min |
+| **C. Sans Docker** | Qui veut tout piloter à la main | Python, Node, PostgreSQL, `make` | 10 à 20 min |
 
 #### A. Docker, images publiées
 
@@ -105,6 +105,8 @@ Trois façons d'installer Hadi. La première convient à la quasi-totalité des 
 curl -O https://raw.githubusercontent.com/SoundwaveAssets/hadi/main/docker-compose.yml
 docker compose up -d
 ```
+
+Sous Windows PowerShell, écrivez `curl.exe -O` : `curl` seul y est un alias d'`Invoke-WebRequest`, qui ne connaît pas `-O`.
 
 Rien à construire : Docker tire les images depuis [GHCR](https://github.com/SoundwaveAssets/hadi/pkgs/container/hadi-api) et démarre la pile, base PostgreSQL comprise. Ouvrez **<http://localhost:8088>**.
 
@@ -138,7 +140,7 @@ make dev-api     # API sur :8000
 make dev-web     # interface sur :8088
 ```
 
-Prérequis : [Python 3.11 ou 3.12](https://www.python.org/downloads/), [Node 20+](https://nodejs.org/), et un [PostgreSQL](https://www.postgresql.org/download/) joignable. `make help` liste toutes les commandes.
+Prérequis : [Python 3.11 ou 3.12](https://www.python.org/downloads/), [Node 20+](https://nodejs.org/), un [PostgreSQL](https://www.postgresql.org/download/) joignable, et `make`, absent de Windows par défaut ([Chocolatey](https://community.chocolatey.org/packages/make) ou [Scoop](https://scoop.sh/#/apps?q=make) l'installent). `make help` liste toutes les commandes.
 
 Python 3.13 n'est pas supporté tant que `numpy==1.26.4` ne publie pas de *wheel* `cp313` : la compilation depuis les sources échoue. La contrainte est écrite dans `cli/pyproject.toml`.
 
@@ -1019,6 +1021,22 @@ Le chien de garde balaie les pipelines figés toutes les dix minutes (tâche pé
 | La tuile d'une intégration reste rouge | Jeton révoqué ou expiré | *Intégrations → Tester* nomme l'erreur : réseau, certificat, ou identifiants |
 | Un pipeline reste `PENDING` indéfiniment | Worker arrêté | Le chien de garde le repasse en échec après le délai ; vérifiez `/api/health` |
 | L'exécutable de la CLI n'est pas proposé au téléchargement | Binaires absents de l'image | Renseignez `HADI_CLI_DIST_DIR`, ou téléchargez depuis la page des releases |
+| Une réinstallation ouvre le tableau de bord au lieu de l'assistant | `docker compose up` a retrouvé les volumes de l'installation précédente | Voir *Repartir de zéro* ci-dessous |
+
+<details>
+<summary><b>Repartir de zéro</b></summary>
+
+`docker compose down` arrête la pile mais conserve les volumes : la base, les comptes et les clés survivent, et le démarrage suivant reprend l'instance là où elle en était. Pour une installation réellement vierge, il faut supprimer les volumes :
+
+```bash
+docker compose down -v
+docker compose up -d
+```
+
+> [!WARNING]
+> `-v` efface la base **et** le volume qui contient les clés de chiffrement et de scellement. Tout l'historique d'audit et tous les secrets d'intégration sont perdus, sans retour possible. Sur une instance qui compte, faites d'abord une sauvegarde : voir [Données et sauvegarde](#13-données-et-sauvegarde).
+
+</details>
 
 <details>
 <summary><b>Vérifier l'intégrité des journaux</b></summary>

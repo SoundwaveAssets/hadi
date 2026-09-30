@@ -133,3 +133,17 @@ def test_les_defauts_annonces_sont_ceux_du_fichier_compose():
         defaut = re.search(rf"\$\{{{variable}:-([^}}]+)\}}", compose)
         if defaut:
             assert defaut.group(1) in README, f"défaut de {variable} absent du README : {defaut.group(1)}"
+
+
+def test_les_commandes_d_installation_passent_sous_powershell():
+    """
+    Windows est un système supporté, et PowerShell y est le terminal par
+    défaut. Il rejette `&&` comme séparateur, ce qui fait échouer la ligne
+    entière avant même de cloner. Les blocs d'installation restent donc en
+    instructions séparées.
+    """
+    blocs = re.findall(r"```bash\n(.*?)```", README, re.S)
+    installation = [b for b in blocs if "git clone" in b or "docker compose up" in b]
+    assert installation, "aucun bloc d'installation trouvé"
+    fautifs = [ligne.strip() for bloc in installation for ligne in bloc.splitlines() if "&&" in ligne]
+    assert not fautifs, f"commandes refusées par PowerShell : {fautifs}"
