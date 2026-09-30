@@ -118,6 +118,9 @@ HADI_VERSION=0.1.0 docker compose up -d
 
 Les versions publiées sont listées sur la [page des releases](https://github.com/SoundwaveAssets/hadi/releases).
 
+> [!NOTE]
+> Les images publiées sont en `amd64`. Sur un Mac Apple Silicon, utilisez la voie B, qui construit l'image pour votre architecture.
+
 #### B. Docker, depuis les sources
 
 ```bash
@@ -1120,7 +1123,7 @@ Ce dont Hadi dépend réellement : **PostgreSQL**, et les outils qu'il orchestre
 - [x] Critère de sécurité réglable (code neuf, Quality Gate, dette totale)
 - [x] File de travail PostgreSQL, chien de garde des pipelines figés
 - [x] Exécutables CLI publiés pour Windows, Linux et macOS, avec leur empreinte SHA-256
-- [x] Images publiées en `amd64` et `arm64`, Apple Silicon et serveurs ARM compris
+- [ ] Images `arm64` publiées à côté des images `amd64`
 - [ ] Jeton de session en cookie `httpOnly` plutôt qu'en `localStorage`
 - [ ] Modèle « exécution » distinct du modèle « commit » (historique de chaque tentative)
 - [ ] Analyse des dépendances en CVSS ([Trivy](https://trivy.dev/), [OWASP Dependency-Check](https://owasp.org/www-project-dependency-check/))
